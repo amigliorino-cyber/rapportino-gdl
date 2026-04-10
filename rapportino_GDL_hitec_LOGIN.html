@@ -824,6 +824,8 @@ async function getAccessToken(cfg) {
   return json.access_token;
 }
 
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbymSqs4HGAHyQH5b1YjQUOGK-OI-WHikr8ySZg5-UDbZIco2fKzVkTf-mbt_RDroHetBQ/exec';
+
 async function driveCreateFolder(token, name, parentId) {
   const q = encodeURIComponent(`name='${name}' and '${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`);
   const listRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)&supportsAllDrives=true&includeItemsFromAllDrives=true`, {
@@ -842,31 +844,15 @@ async function driveCreateFolder(token, name, parentId) {
 }
 
 async function driveUploadFile(token, name, content, mimeType, parentId) {
-  // Use multipart upload with proper boundary — works for shared folders
-  const boundary = '-------314159265358979323846';
-  const delimiter = `\r\n--${boundary}\r\n`;
-  const closeDelim = `\r\n--${boundary}--`;
-  const metadata = JSON.stringify({ name, mimeType, parents: [parentId] });
-  const body =
-    delimiter +
-    'Content-Type: application/json\r\n\r\n' + metadata +
-    delimiter +
-    `Content-Type: ${mimeType}\r\n\r\n` + content +
-    closeDelim;
-
-  const res = await fetch(
-    `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true&fields=id,name`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': `multipart/related; boundary="${boundary}"`,
-      },
-      body,
-    }
-  );
+  // Use Apps Script as intermediary — bypasses Service Account quota limits
+  const res = await fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ folderId: parentId, fileName: name, content, mimeType }),
+    redirect: 'follow',
+  });
   const result = await res.json();
-  if (!result.id) throw new Error(`Upload fallito per "${name}": ${JSON.stringify(result)}`);
+  if (!result.success) throw new Error(`Upload fallito per "${name}": ${result.error || JSON.stringify(result)}`);
   return result;
 }
 
