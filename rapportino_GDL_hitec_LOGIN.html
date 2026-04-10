@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Rapportino GDL">
+<meta name="theme-color" content="#1a1a2e">
+<title>Rapportino GDL — HI.TEC.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --primary:#1a1a2e;--accent:#e63946;--accent2:#457b9d;
+  --surface:#f8f7f4;--surface2:#eeecea;--border:#d4d0c8;
+  --text:#1a1a2e;--text2:#5a5750;--text3:#9a9690;
+  --ok:#2d6a4f;--ok-bg:#d8f3dc;--err:#9b2226;--err-bg:#fde8e8;
+  --warn-bg:#fff8e1;--warn:#7d5a00;--gdrive:#1a73e8;
+}
+html{-webkit-text-size-adjust:100%;height:100%}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--surface);color:var(--text);font-size:15px;line-height:1.5;min-height:100%;padding-bottom:env(safe-area-inset-bottom)}
+
+/* HEADER */
+.hdr{background:var(--primary);color:#fff;padding:calc(env(safe-area-inset-top) + 1rem) 1.25rem 1rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;overflow:hidden}
+.hdr::before{content:'';position:absolute;right:-16px;top:-16px;width:110px;height:110px;border-radius:50%;background:rgba(230,57,70,.15)}
+.hdr::after{content:'';position:absolute;right:40px;bottom:-30px;width:70px;height:70px;border-radius:50%;background:rgba(69,123,157,.18)}
+.hdr-left{position:relative;z-index:1}
+.hdr-logo{font-size:19px;font-weight:600;letter-spacing:-.5px}
+.hdr-logo em{color:var(--accent);font-style:normal}
+.hdr-logo span{font-weight:300;font-size:13px;opacity:.45}
+.hdr-sub{font-size:9px;font-family:'IBM Plex Mono',monospace;color:rgba(255,255,255,.4);margin-top:2px;text-transform:uppercase;letter-spacing:.1em}
+.hdr-right{font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(255,255,255,.45);text-align:right;position:relative;z-index:1;line-height:1.9}
+.hdr-right strong{color:#fff;font-size:12px;display:block}
+.hdr-cfg{position:relative;z-index:1;margin-left:12px;flex-shrink:0}
+.cfg-btn{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;touch-action:manipulation;transition:all .15s}
+.cfg-btn:active{background:rgba(255,255,255,.2)}
+.cfg-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);position:absolute;top:-1px;right:-1px;border:2px solid var(--primary);display:none}
+.cfg-dot.show{display:block}
+.cfg-dot.live{background:#2d9d5c}
+
+.prog-bar{height:3px;background:rgba(0,0,0,.08);position:sticky;top:0;z-index:49}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%;transition:width .4s}
+
+.inner{padding:.875rem 1rem 2rem;max-width:860px;margin:0 auto}
+
+/* GDRIVE BADGE */
+.gdrive-badge{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fff;border:1.5px solid #c5d9f7;border-radius:9px;margin-bottom:.875rem}
+.gdrive-icon{width:22px;height:22px;flex-shrink:0}
+.gdrive-info{flex:1;min-width:0}
+.gdrive-info strong{color:var(--gdrive);font-size:13px;display:block;font-weight:500}
+.gdrive-path{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* SECTIONS */
+.sec{background:#fff;border:1px solid var(--border);border-radius:11px;margin-bottom:.75rem;overflow:hidden}
+.sec-hdr{padding:.875rem 1rem;display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:manipulation;min-height:54px}
+.sec-hdr:active{background:var(--surface)}
+.sec-num{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent);font-weight:500;min-width:22px;flex-shrink:0}
+.sec-title{font-size:14px;font-weight:500;flex:1}
+.sec-ok{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;transition:all .25s}
+.sec-ok.done{background:var(--ok);border-color:var(--ok);color:#fff}
+.sec-chev{font-size:12px;color:var(--text3);transition:transform .2s;flex-shrink:0}
+.sec-chev.open{transform:rotate(180deg)}
+.sec-body{padding:.875rem 1rem;display:none;border-top:1px solid var(--surface2)}
+.sec-body.open{display:block;animation:fadeDown .2s ease}
+@keyframes fadeDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+
+/* FIELDS */
+.grid{display:grid;gap:10px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:1fr 1fr 1fr}
+.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:520px){.g3{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.g4{grid-template-columns:1fr 1fr}}
+@media(max-width:360px){.g2,.g3,.g4{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:5px}
+.lbl{font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;font-family:'IBM Plex Mono',monospace}
+.sub-label{font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;font-family:'IBM Plex Mono',monospace;display:block;margin-bottom:.5rem}
+input[type=text],input[type=number],input[type=email],input[type=month],input[type=time],select,textarea{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'IBM Plex Sans',sans-serif;font-size:15px;color:var(--text);background:var(--surface);outline:none;transition:border-color .15s,background .15s;-webkit-appearance:none;appearance:none;min-height:46px}
+textarea{min-height:80px;resize:vertical;font-size:12px;font-family:'IBM Plex Mono',monospace;line-height:1.6}
+input:focus,select:focus,textarea:focus{border-color:var(--accent2);background:#fff}
+input::placeholder,textarea::placeholder{color:var(--text3)}
+.toggle-grp{display:flex;border:1.5px solid var(--border);border-radius:8px;overflow:hidden;min-height:46px}
+.tog-btn{flex:1;font-size:14px;font-weight:500;border:none;background:var(--surface);color:var(--text2);cursor:pointer;font-family:'IBM Plex Sans',sans-serif;transition:all .15s;touch-action:manipulation}
+.tog-btn.on{background:var(--primary);color:#fff}
+.day-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
+.day-pill{padding:8px 10px;font-size:12px;font-weight:500;font-family:'IBM Plex Mono',monospace;border:1.5px solid var(--border);border-radius:22px;cursor:pointer;background:var(--surface);color:var(--text2);touch-action:manipulation;min-height:40px;display:flex;align-items:center;transition:all .15s}
+.day-pill.on{background:var(--primary);border-color:var(--primary);color:#fff}
+.pers-row{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:7px;animation:rowIn .2s ease}
+@keyframes rowIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.del-btn{width:46px;height:46px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text3);cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;touch-action:manipulation;flex-shrink:0;transition:all .15s;font-family:'IBM Plex Sans',sans-serif}
+.del-btn:active{background:var(--err-bg);color:var(--err);border-color:var(--err)}
+.add-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;font-size:12px;font-family:'IBM Plex Mono',monospace;font-weight:500;color:var(--accent2);border:1.5px dashed var(--accent2);border-radius:8px;background:none;cursor:pointer;touch-action:manipulation;min-height:42px;margin-top:4px;transition:all .15s}
+.add-btn:active{background:#f0f6fb}
+.operai-block{background:var(--surface2);border:1.5px solid var(--border);border-radius:9px;padding:.75rem 1rem;margin-bottom:.875rem;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.operai-block .lbl{font-size:13px;font-weight:500;color:var(--text2);text-transform:none;letter-spacing:0;font-family:'IBM Plex Sans',sans-serif}
+.operai-block input{width:90px;text-align:center;font-size:20px;font-weight:600;background:#fff}
+
+/* MEZZI */
+.mezzi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:.875rem}
+@media(max-width:520px){.mezzi-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:380px){.mezzi-grid{grid-template-columns:repeat(2,1fr)}}
+.mc{border:1.5px solid var(--border);border-radius:9px;padding:10px 8px;background:var(--surface);cursor:pointer;touch-action:manipulation;position:relative;transition:all .15s;text-align:center}
+.mc:active{border-color:var(--accent2)}
+.mc.sel{border-color:var(--accent);background:#fff8f8}
+.mc-icon{font-size:24px;display:block;margin-bottom:3px;line-height:1}
+.mc-name{font-size:10px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.03em;font-family:'IBM Plex Mono',monospace;line-height:1.3}
+.mc-qty{margin-top:7px}
+.mc-qty input{padding:5px 4px;font-size:14px;background:#fff;min-height:38px;text-align:center;display:none}
+.mc.sel .mc-qty input{display:block}
+.mc-ck{position:absolute;top:5px;right:5px;width:15px;height:15px;border-radius:50%;background:var(--accent);display:none;align-items:center;justify-content:center}
+.mc.sel .mc-ck{display:flex}
+.mc-ck::after{content:'';width:7px;height:7px;border-radius:50%;background:#fff}
+.targa-row{display:grid;grid-template-columns:auto 1fr 1fr auto;gap:7px;align-items:center;margin-bottom:8px;animation:rowIn .2s ease}
+@media(max-width:520px){.targa-row{grid-template-columns:1fr auto;grid-template-rows:auto auto auto}.t-label{grid-column:1/3}}
+.t-label{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;color:var(--accent);white-space:nowrap;padding:4px 0}
+
+/* ATTIVITÀ */
+.att-card{border:1.5px solid var(--border);border-radius:9px;padding:.875rem;margin-bottom:.625rem;background:var(--surface);animation:rowIn .2s ease;position:relative}
+.att-card-num{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent);margin-bottom:.625rem;font-weight:500;letter-spacing:.05em}
+.att-del{position:absolute;top:.625rem;right:.625rem;width:34px;height:34px;border:1.5px solid var(--border);border-radius:7px;background:#fff;color:var(--text3);cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center;touch-action:manipulation;transition:all .15s;font-family:'IBM Plex Sans',sans-serif}
+.att-del:active{background:var(--err-bg);color:var(--err);border-color:var(--err)}
+.att-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:400px){.att-grid{grid-template-columns:1fr}}
+
+/* INTERRUZIONI */
+.int-block{border:1.5px solid var(--border);border-radius:9px;padding:.875rem;margin-bottom:.75rem}
+.int-badge{display:inline-block;padding:3px 12px;border-radius:12px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.05em;margin-bottom:.75rem}
+.int-d{background:#fff9e6;color:#7d5a00;border:1px solid #f0d060}
+.int-n{background:#eef0fb;color:#3a3a8c;border:1px solid #c0c8f0}
+.divider{height:1px;background:var(--surface2);margin:.875rem 0}
+
+/* SAVE BAR */
+.save-bar{background:var(--primary);padding:1rem 1.25rem calc(1rem + env(safe-area-inset-bottom));display:flex;align-items:center;gap:10px;position:sticky;bottom:0;z-index:50}
+.btn-save{display:flex;align-items:center;gap:8px;justify-content:center;padding:14px 20px;background:var(--gdrive);color:#fff;border:none;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;touch-action:manipulation;min-height:52px;flex:1;transition:all .15s;letter-spacing:.03em}
+.btn-save:active{background:#1558b0;transform:scale(.98)}
+.btn-save:disabled{background:#7aabdf;cursor:not-allowed;transform:none}
+.btn-reset{padding:14px 16px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);border:1.5px solid rgba(255,255,255,.15);border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:13px;cursor:pointer;touch-action:manipulation;min-height:52px;transition:all .15s;white-space:nowrap}
+.btn-reset:active{background:rgba(255,255,255,.18)}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* MODALI OVERLAY */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;align-items:flex-end;justify-content:center;padding:0}
+@media(min-width:600px){.modal-overlay{align-items:center;padding:1rem}}
+.modal-overlay.open{display:flex;animation:bgFade .2s ease}
+@keyframes bgFade{from{background:rgba(0,0,0,0)}to{background:rgba(0,0,0,.55)}}
+.modal{background:#fff;width:100%;max-width:500px;border-radius:16px 16px 0 0;padding:1.5rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom));max-height:92vh;overflow-y:auto;animation:slideUp .25s ease}
+@media(min-width:600px){.modal{border-radius:14px;padding:1.5rem;max-height:85vh}}
+@keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 1.25rem;display:block}
+@media(min-width:600px){.modal-handle{display:none}}
+.modal-title{font-size:17px;font-weight:600;margin-bottom:.25rem;color:var(--text)}
+.modal-sub{font-size:13px;color:var(--text2);margin-bottom:1.25rem;line-height:1.5}
+.modal-actions{display:flex;gap:10px;margin-top:1.25rem}
+.btn-confirm{flex:1;padding:14px;background:var(--gdrive);color:#fff;border:none;border-radius:9px;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;cursor:pointer;min-height:50px;touch-action:manipulation;transition:all .15s}
+.btn-confirm:active{background:#1558b0}
+.btn-cancel{padding:14px 18px;background:var(--surface);color:var(--text2);border:1.5px solid var(--border);border-radius:9px;font-family:'IBM Plex Mono',monospace;font-size:13px;cursor:pointer;min-height:50px;touch-action:manipulation}
+.btn-cancel:active{background:var(--surface2)}
+
+/* CONFIRM MODAL RIEPILOGO */
+.recap-block{background:var(--surface);border-radius:9px;padding:.875rem;margin-bottom:.25rem}
+.recap-row{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:1px solid var(--surface2)}
+.recap-row:last-child{border-bottom:none}
+.recap-key{font-size:12px;color:var(--text2);font-family:'IBM Plex Mono',monospace}
+.recap-val{font-size:13px;font-weight:500;color:var(--text);text-align:right;max-width:60%;word-break:break-word}
+.recap-path{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--gdrive);margin-top:.5rem;word-break:break-all;line-height:1.6}
+
+/* CONFIG MODAL */
+.cfg-step{margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--surface2)}
+.cfg-step:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.cfg-step-num{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--accent);font-weight:500;margin-bottom:.25rem}
+.cfg-step-title{font-size:13px;font-weight:500;margin-bottom:.375rem}
+.cfg-step-desc{font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:.5rem}
+.cfg-link{display:inline-block;padding:4px 10px;background:#e8f0fe;color:var(--gdrive);border-radius:5px;font-family:'IBM Plex Mono',monospace;font-size:10px;text-decoration:none;margin-bottom:.5rem}
+.status-badge{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:20px;font-size:11px;font-weight:500;font-family:'IBM Plex Mono',monospace;margin-bottom:.875rem}
+.status-badge.ok{background:var(--ok-bg);color:var(--ok)}
+.status-badge.err{background:var(--err-bg);color:var(--err)}
+.status-badge.warn{background:var(--warn-bg);color:var(--warn)}
+.status-dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0}
+
+/* TOAST */
+.toast{position:fixed;bottom:calc(80px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:300;padding:13px 20px;border-radius:9px;font-size:13px;font-weight:500;max-width:calc(100vw - 2rem);box-shadow:0 4px 24px rgba(0,0,0,.22);display:none;text-align:center;min-width:240px;line-height:1.5;animation:toastIn .3s ease}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translateX(-50%)}}
+.toast.ok{background:var(--ok-bg);color:var(--ok);border-left:4px solid var(--ok)}
+.toast.err{background:var(--err-bg);color:var(--err);border-left:4px solid var(--err)}
+.toast.warn{background:var(--warn-bg);color:var(--warn);border-left:4px solid #ffc107}
+
+/* INSTALL HINT */
+.install-hint{display:none;background:#0c3d6b;color:rgba(255,255,255,.8);font-size:11px;text-align:center;padding:8px 16px;font-family:'IBM Plex Mono',monospace;letter-spacing:.03em}
+
+/* LOGIN SCREEN */
+.login-screen{display:none;position:fixed;inset:0;background:var(--primary);z-index:500;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1.5rem}
+.login-screen.show{display:flex;animation:lgIn .3s ease}
+@keyframes lgIn{from{opacity:0}to{opacity:1}}
+.login-logo{text-align:center;margin-bottom:2.5rem}
+.login-logo-text{font-size:32px;font-weight:600;color:#fff;letter-spacing:-1px}
+.login-logo-text em{color:var(--accent);font-style:normal}
+.login-logo-sub{font-size:11px;font-family:'IBM Plex Mono',monospace;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.1em;margin-top:4px}
+.login-card{background:#fff;border-radius:16px;padding:1.75rem 1.5rem;width:100%;max-width:380px;box-shadow:0 24px 60px rgba(0,0,0,.4)}
+.login-card-title{font-size:16px;font-weight:600;color:var(--text);margin-bottom:1.25rem;text-align:center}
+.login-field{margin-bottom:.875rem}
+.login-field .lbl{display:block;margin-bottom:5px}
+.login-err{display:none;background:var(--err-bg);color:var(--err);border-radius:7px;padding:9px 12px;font-size:12px;margin-bottom:.875rem;border-left:3px solid var(--err);line-height:1.4}
+.login-err.show{display:block;animation:lgIn .2s ease}
+.btn-login{width:100%;padding:14px;background:var(--primary);color:#fff;border:none;border-radius:9px;font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:500;cursor:pointer;min-height:52px;touch-action:manipulation;transition:all .15s;letter-spacing:.03em;margin-top:.25rem}
+.btn-login:active{background:#2d2d4e;transform:scale(.98)}
+.btn-login:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.login-footer{margin-top:1rem;text-align:center;font-size:11px;color:rgba(255,255,255,.3);font-family:'IBM Plex Mono',monospace}
+
+/* ADMIN PANEL */
+.admin-bar{display:flex;align-items:center;gap:8px;background:#fff3cd;border:1.5px solid #ffc107;border-radius:9px;padding:9px 12px;margin-bottom:.875rem}
+.admin-bar-text{flex:1;font-size:12px;color:#7d5a00;font-weight:500}
+.btn-admin{padding:7px 14px;background:#ffc107;color:#1a1a2e;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:'IBM Plex Mono',monospace;touch-action:manipulation;white-space:nowrap}
+
+/* USER TABLE */
+.user-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:.75rem}
+.user-table th{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;padding:6px 8px;border-bottom:1.5px solid var(--border);text-align:left}
+.user-table td{padding:8px;border-bottom:1px solid var(--surface2);vertical-align:middle}
+.user-table tr:last-child td{border-bottom:none}
+.user-role{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:500;font-family:'IBM Plex Mono',monospace}
+.user-role.admin{background:#e8f0fe;color:#1a73e8}
+.user-role.operaio{background:var(--surface2);color:var(--text2)}
+.btn-del-user{padding:5px 10px;background:var(--err-bg);color:var(--err);border:1px solid var(--err);border-radius:6px;font-size:11px;cursor:pointer;font-family:'IBM Plex Mono',monospace;touch-action:manipulation}
+.btn-del-user:active{background:var(--err);color:#fff}
+.new-user-form{background:var(--surface);border-radius:9px;padding:.875rem;margin-top:.5rem}
+.new-user-form .sub-label{margin-bottom:.75rem}
+</style>
+</head>
+<body>
+
+<div class="install-hint" id="install-hint">
+  Tocca <strong style="color:#fff">⎋ Condividi</strong> → <strong style="color:#fff">Aggiungi a schermata Home</strong>
+</div>
+
+<!-- LOGIN SCREEN -->
+<div class="login-screen" id="login-screen">
+  <div class="login-logo">
+    <div class="login-logo-text">HI<em>.</em>TEC<em>.</em></div>
+    <div class="login-logo-sub">Rapportino Giornaliero di Lavoro</div>
+  </div>
+  <div class="login-card">
+    <div class="login-card-title">Accedi</div>
+    <div class="login-err" id="login-err"></div>
+    <div class="login-field">
+      <span class="lbl">Nome utente</span>
+      <input type="text" id="login-user" placeholder="es. mario.rossi" autocomplete="username" autocapitalize="none" onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()">
+    </div>
+    <div class="login-field">
+      <span class="lbl">Password</span>
+      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn-login" id="btn-login" onclick="doLogin()">Entra</button>
+  </div>
+  <div class="login-footer">HI.TEC. / Italia s.r.l. — uso interno</div>
+</div>
+
+<!-- ADMIN MODAL -->
+<div class="modal-overlay" id="modal-admin">
+  <div class="modal">
+    <span class="modal-handle"></span>
+    <div class="modal-title">Pannello amministratore</div>
+    <div class="modal-sub">Gestisci gli accessi degli operai. Le modifiche vengono salvate su Google Drive.</div>
+    <div id="admin-status" class="status-badge warn" style="margin-bottom:.875rem;display:inline-flex"><span class="status-dot"></span><span id="admin-status-text">Caricamento utenti…</span></div>
+    <div class="sub-label">Utenti registrati</div>
+    <div style="overflow-x:auto;margin-bottom:.5rem">
+      <table class="user-table" id="user-table">
+        <thead><tr><th>Username</th><th>Ruolo</th><th></th></tr></thead>
+        <tbody id="user-tbody"></tbody>
+      </table>
+    </div>
+    <div class="new-user-form">
+      <span class="sub-label">Aggiungi utente</span>
+      <div class="grid g2" style="margin-bottom:8px">
+        <div class="field"><span class="lbl">Username</span><input type="text" id="new-username" placeholder="es. mario.rossi" autocapitalize="none"></div>
+        <div class="field"><span class="lbl">Password</span><input type="password" id="new-password" placeholder="min. 6 caratteri"></div>
+      </div>
+      <div class="field" style="margin-bottom:10px">
+        <span class="lbl">Ruolo</span>
+        <select id="new-role">
+          <option value="operaio">Operaio</option>
+          <option value="admin">Amministratore</option>
+        </select>
+      </div>
+      <button class="add-btn" style="width:100%;justify-content:center" onclick="addUser()">+ Aggiungi utente</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('modal-admin')">Chiudi</button>
+      <button class="btn-confirm" onclick="saveUsers()">Salva modifiche</button>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-left">
+    <div class="hdr-logo">HI<em>.</em>TEC<em>.</em> <span>/ Italia s.r.l.</span></div>
+    <div class="hdr-sub">Rapportino Giornaliero di Lavoro</div>
+  </div>
+  <div class="hdr-right">
+    <strong id="hdr-date">—</strong>
+    <span id="hdr-week">Sett. —</span>
+  </div>
+  <div class="hdr-cfg">
+    <button class="cfg-btn" onclick="doLogout()" id="btn-logout" title="Esci" style="display:none">⏻</button>
+    <button class="cfg-btn" onclick="openCfgModal()" title="Configurazione Google Drive">⚙</button>
+    <span class="cfg-dot show" id="cfg-dot"></span>
+  </div>
+</div>
+<div class="prog-bar"><div class="prog-fill" id="progress"></div></div>
+
+<div class="inner">
+
+  <!-- GDRIVE BADGE -->
+  <div class="gdrive-badge">
+    <svg class="gdrive-icon" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
+      <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+      <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47"/>
+      <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/>
+      <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+      <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+      <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+    </svg>
+    <div class="gdrive-info">
+      <strong>Salvataggio su Google Drive</strong>
+      <div class="gdrive-path" id="gdrive-path-badge">1 - RAPPORTINI / … / … / …</div>
+    </div>
+  </div>
+
+  <!-- ADMIN BAR (visible only to admins) -->
+  <div class="admin-bar" id="admin-bar" style="display:none">
+    <div class="admin-bar-text">👑 Sei loggato come amministratore</div>
+    <button class="btn-admin" onclick="openAdminPanel()">Gestisci utenti</button>
+  </div>
+    <div class="sec-hdr" onclick="toggleSec(this)">
+      <span class="sec-num">01</span><span class="sec-title">Cantiere e data</span>
+      <span class="sec-ok" id="ok1"></span><span class="sec-chev open">▾</span>
+    </div>
+    <div class="sec-body open">
+      <div class="grid g2" style="margin-bottom:10px">
+        <div class="field"><span class="lbl">Cantiere</span><input type="text" id="cantiere" placeholder="Nome del cantiere" oninput="updateAll()"></div>
+        <div class="field"><span class="lbl">Codice cantiere</span><input type="text" id="codice" placeholder="es. MI-2024-001" oninput="updateAll()"></div>
+      </div>
+      <div class="field" style="margin-bottom:10px">
+        <span class="lbl">Appaltatore</span>
+        <input type="text" id="appaltatore" placeholder="Ragione sociale appaltatore" oninput="updateAll()">
+      </div>
+      <div class="grid g3" style="margin-bottom:10px">
+        <div class="field"><span class="lbl">Mese</span><input type="month" id="mese" oninput="updateAll()"></div>
+        <div class="field"><span class="lbl">Anno</span><input type="number" id="anno" oninput="updateAll()"></div>
+        <div class="field"><span class="lbl">Settimana n°</span><input type="number" id="settimana" min="1" max="53" placeholder="1–53" oninput="updateAll()"></div>
+      </div>
+      <div class="grid g2">
+        <div class="field">
+          <span class="lbl">Turno</span>
+          <div class="toggle-grp">
+            <button class="tog-btn on" id="btn-d" onclick="setTurno('D')">Diurno</button>
+            <button class="tog-btn" id="btn-n" onclick="setTurno('N')">Notturno</button>
+          </div>
+        </div>
+        <div>
+          <span class="sub-label">Giorno settimana</span>
+          <div class="day-row">
+            <div class="day-pill" onclick="pickDay(this)">L</div>
+            <div class="day-pill" onclick="pickDay(this)">Ma</div>
+            <div class="day-pill" onclick="pickDay(this)">Me</div>
+            <div class="day-pill" onclick="pickDay(this)">G</div>
+            <div class="day-pill" onclick="pickDay(this)">V</div>
+            <div class="day-pill" onclick="pickDay(this)">S</div>
+            <div class="day-pill" onclick="pickDay(this)">D</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEZ 02 -->
+  <div class="sec">
+    <div class="sec-hdr" onclick="toggleSec(this)">
+      <span class="sec-num">02</span><span class="sec-title">Personale del turno</span>
+      <span class="sec-ok" id="ok2"></span><span class="sec-chev">▾</span>
+    </div>
+    <div class="sec-body">
+      <div class="field" style="margin-bottom:10px">
+        <span class="lbl">Preposto alla sicurezza</span>
+        <input type="text" id="preposto" placeholder="Nome e cognome" oninput="updateAll()">
+      </div>
+      <div class="operai-block">
+        <span class="lbl">👷 Numero operai in turno</span>
+        <input type="number" id="n_operai" min="0" max="99" placeholder="0" oninput="updateAll()">
+      </div>
+      <div class="grid g2">
+        <div>
+          <span class="sub-label">Personale abilitato MI-MDO</span>
+          <div id="mdo-list"><div class="pers-row"><input type="text" placeholder="Nome e cognome"><button class="del-btn" onclick="delRow(this)">×</button></div></div>
+          <button class="add-btn" onclick="addPers('mdo-list')">+ aggiungi</button>
+        </div>
+        <div>
+          <span class="sub-label">Personale abilitato MI-MEPC</span>
+          <div id="mepc-list"><div class="pers-row"><input type="text" placeholder="Nome e cognome"><button class="del-btn" onclick="delRow(this)">×</button></div></div>
+          <button class="add-btn" onclick="addPers('mepc-list')">+ aggiungi</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEZ 03 -->
+  <div class="sec">
+    <div class="sec-hdr" onclick="toggleSec(this)">
+      <span class="sec-num">03</span><span class="sec-title">Mezzi utilizzati</span>
+      <span class="sec-ok" id="ok3"></span><span class="sec-chev">▾</span>
+    </div>
+    <div class="sec-body">
+      <p style="font-size:12px;color:var(--text2);margin-bottom:.875rem">Tocca un mezzo per selezionarlo — appariranno le righe per targa e modello.</p>
+      <div class="mezzi-grid" id="mezzi-cards"></div>
+      <div class="divider"></div>
+      <span class="sub-label">Targhe e modelli</span>
+      <div id="targhe-wrap"><p style="font-size:12px;color:var(--text3);font-style:italic;padding:4px 0">Nessun mezzo selezionato.</p></div>
+    </div>
+  </div>
+
+  <!-- SEZ 04 -->
+  <div class="sec">
+    <div class="sec-hdr" onclick="toggleSec(this)">
+      <span class="sec-num">04</span><span class="sec-title">Attività svolte</span>
+      <span class="sec-ok" id="ok4"></span><span class="sec-chev">▾</span>
+    </div>
+    <div class="sec-body">
+      <div id="att-list"></div>
+      <button class="add-btn" onclick="addAtt()">+ aggiungi riga</button>
+    </div>
+  </div>
+
+  <!-- SEZ 05 -->
+  <div class="sec">
+    <div class="sec-hdr" onclick="toggleSec(this)">
+      <span class="sec-num">05</span><span class="sec-title">Interruzioni</span>
+      <span class="sec-ok" id="ok5"></span><span class="sec-chev">▾</span>
+    </div>
+    <div class="sec-body">
+      <div class="int-block">
+        <div class="int-badge int-d">INTERRUZIONE DIURNA</div>
+        <div class="grid g2">
+          <div class="field"><span class="lbl">Binario</span><input type="text" id="id_bin" placeholder="es. 1 UP"></div>
+          <div class="field"><span class="lbl">Firma</span><input type="text" id="id_fir" placeholder="Iniziali"></div>
+          <div class="field"><span class="lbl">Uscita ore</span><input type="time" id="id_usc"></div>
+          <div class="field"><span class="lbl">Rientro ore</span><input type="time" id="id_rie"></div>
+        </div>
+      </div>
+      <div class="int-block">
+        <div class="int-badge int-n">INTERRUZIONE NOTTURNA</div>
+        <div class="grid g2">
+          <div class="field"><span class="lbl">Binario</span><input type="text" id="in_bin" placeholder="es. 2 DOWN"></div>
+          <div class="field"><span class="lbl">Firma</span><input type="text" id="in_fir" placeholder="Iniziali"></div>
+          <div class="field"><span class="lbl">Uscita ore</span><input type="time" id="in_usc"></div>
+          <div class="field"><span class="lbl">Rientro ore</span><input type="time" id="in_rie"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- SAVE BAR -->
+<div class="save-bar">
+  <button class="btn-reset" onclick="resetForm()">↺ Nuovo</button>
+  <button class="btn-save" id="btn-save" onclick="onSaveClick()">
+    <svg width="15" height="15" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
+      <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="rgba(255,255,255,.85)"/>
+      <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="rgba(255,255,255,.85)"/>
+      <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="rgba(255,255,255,.85)"/>
+      <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#fff"/>
+      <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#fff"/>
+      <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#fff"/>
+    </svg>
+    Salva su Google Drive
+  </button>
+</div>
+
+<!-- MODALE CONFERMA SALVATAGGIO -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal">
+    <span class="modal-handle"></span>
+    <div class="modal-title">Conferma salvataggio</div>
+    <div class="modal-sub">Controlla i dati prima di salvare su Google Drive.</div>
+    <div class="recap-block" id="recap-content"></div>
+    <div class="recap-path" id="recap-path"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('modal-confirm')">Annulla</button>
+      <button class="btn-confirm" id="btn-confirm-save" onclick="doSave()">
+        Salva ora
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALE CONFIGURAZIONE GOOGLE DRIVE -->
+<div class="modal-overlay" id="modal-cfg">
+  <div class="modal">
+    <span class="modal-handle"></span>
+    <div class="modal-title">Attivazione Google Drive</div>
+    <div class="modal-sub">Un'unica operazione da fare sul tuo dispositivo — gli operai non vedranno mai questa schermata.</div>
+
+    <div id="cfg-status-badge"></div>
+
+    <div class="cfg-step">
+      <div class="cfg-step-num">GIÀ CONFIGURATO</div>
+      <div class="cfg-step-title">Account e cartella Drive</div>
+      <div class="cfg-step-desc">L'account di servizio e la cartella di destinazione sono già impostati.</div>
+      <div style="margin-top:8px;padding:10px 12px;background:var(--surface);border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text2);line-height:1.9">
+        <div>📧 <span style="color:var(--gdrive)">rapportini-app@rapportini-hitec.iam.gserviceaccount.com</span></div>
+        <div>📁 <span style="color:var(--ok)">1 - RAPPORTINI</span> <span style="color:var(--text3)">(ID: 1SKCOAfk…WVg)</span></div>
+      </div>
+      <input type="hidden" id="cfg-email" value="rapportini-app@rapportini-hitec.iam.gserviceaccount.com">
+      <input type="hidden" id="cfg-folder" value="1SKCOAfkfkMEnWRaSrt-cWhpvja9teWVg">
+    </div>
+
+    <div class="cfg-step" style="border-bottom:none;margin-bottom:0;padding-bottom:0">
+      <div class="cfg-step-num">UNICA AZIONE RICHIESTA</div>
+      <div class="cfg-step-title">Incolla la chiave privata dal file JSON</div>
+      <div class="cfg-step-desc">Apri il file <code style="font-size:11px;background:#f0f0ee;padding:2px 4px;border-radius:3px">rapportini-hitec-…json</code>, copia il valore del campo <code style="font-size:11px;background:#f0f0ee;padding:2px 4px;border-radius:3px">private_key</code> — inizia con <code style="font-size:11px;background:#f0f0ee;padding:2px 4px;border-radius:3px">-----BEGIN PRIVATE KEY-----</code> e finisce con <code style="font-size:11px;background:#f0f0ee;padding:2px 4px;border-radius:3px">-----END PRIVATE KEY-----\n</code>. Incolla tutto qui sotto.</div>
+      <div class="field" style="margin-top:10px">
+        <span class="lbl">Private Key</span>
+        <textarea id="cfg-key" placeholder="-----BEGIN PRIVATE KEY-----&#10;MIIEvgIBADANBgkq...&#10;-----END PRIVATE KEY-----&#10;" style="min-height:100px"></textarea>
+      </div>
+      <div style="margin-top:8px;padding:8px 12px;background:var(--warn-bg);border-radius:7px;font-size:11px;color:var(--warn);line-height:1.6">
+        ⚠ La chiave viene salvata solo su questo dispositivo (localStorage). Non viene mai trasmessa ad altri server.
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('modal-cfg')">Annulla</button>
+      <button class="btn-confirm" onclick="saveCfg()">Salva configurazione</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════════════
+   COSTANTI E STATO
+══════════════════════════════════════════════ */
+const MEZZI = [
+  {id:'carrelli',  icon:'🚜', name:'Carrelli'},
+  {id:'pianali',   icon:'🚛', name:'Pianali'},
+  {id:'carro',     icon:'🚒', name:'Carro botte'},
+  {id:'autoscala', icon:'🏗',  name:'Autoscala'},
+  {id:'auto',      icon:'🚗', name:'Auto'},
+  {id:'camion',    icon:'🚚', name:'Camion'},
+  {id:'furgoni',   icon:'🚐', name:'Furgoni'},
+];
+const MESI_IT   = ['GEN','FEB','MAR','APR','MAG','GIU','LUG','AGO','SET','OTT','NOV','DIC'];
+const MESI_FULL = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+
+let turno = 'D';
+let attN  = 0;
+const sel = {};
+
+/* ══════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════ */
+function init() {
+  const now = new Date();
+  document.getElementById('anno').value  = now.getFullYear();
+  document.getElementById('mese').value  = now.toISOString().slice(0, 7);
+  const wk = Math.ceil(((now - new Date(now.getFullYear(),0,1)) / 86400000 + new Date(now.getFullYear(),0,1).getDay() + 1) / 7);
+  document.getElementById('settimana').value = wk;
+  document.getElementById('hdr-date').textContent = now.toLocaleDateString('it-IT', {weekday:'short', day:'numeric', month:'short'});
+  document.getElementById('hdr-week').textContent = 'Sett. ' + wk;
+  const dayMap = [6,0,1,2,3,4,5];
+  document.querySelectorAll('.day-pill')[dayMap[now.getDay()]]?.classList.add('on');
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isSafari = /safari/i.test(navigator.userAgent) && !/chrome/i.test(navigator.userAgent);
+  if (isIOS && isSafari && !window.navigator.standalone) {
+    document.getElementById('install-hint').style.display = 'block';
+  }
+  buildMezzi();
+  for (let i = 0; i < 5; i++) addAtt();
+  updateCfgDot();
+  updateAll();
+}
+
+/* ══════════════════════════════════════════════
+   MEZZI
+══════════════════════════════════════════════ */
+function buildMezzi() {
+  const g = document.getElementById('mezzi-cards');
+  g.innerHTML = '';
+  MEZZI.forEach(m => {
+    const d = document.createElement('div');
+    d.className = 'mc'; d.dataset.id = m.id;
+    d.innerHTML = `<span class="mc-icon">${m.icon}</span><div class="mc-name">${m.name}</div><div class="mc-qty"><input type="number" min="1" max="20" value="1" oninput="rebuildTarghe()"></div><div class="mc-ck"></div>`;
+    d.addEventListener('click', e => { if (e.target.tagName !== 'INPUT') toggleMezzo(m.id); });
+    g.appendChild(d);
+  });
+}
+function toggleMezzo(id) {
+  const c = document.querySelector(`.mc[data-id="${id}"]`);
+  const inp = c.querySelector('input');
+  if (sel[id]) { delete sel[id]; c.classList.remove('sel'); inp.style.display = 'none'; }
+  else { sel[id] = 1; c.classList.add('sel'); inp.style.display = 'block'; inp.value = 1; setTimeout(() => inp.focus(), 60); }
+  rebuildTarghe(); updateAll();
+}
+function rebuildTarghe() {
+  const wrap = document.getElementById('targhe-wrap');
+  const active = MEZZI.filter(m => sel[m.id]);
+  if (!active.length) { wrap.innerHTML = '<p style="font-size:12px;color:var(--text3);font-style:italic;padding:4px 0">Nessun mezzo selezionato.</p>'; return; }
+  const prev = {};
+  wrap.querySelectorAll('.targa-row').forEach(r => {
+    const mid = r.dataset.mezzo, idx = +r.dataset.idx;
+    if (!prev[mid]) prev[mid] = [];
+    prev[mid][idx] = { t: r.querySelector('[data-f=t]')?.value || '', mod: r.querySelector('[data-f=mod]')?.value || '' };
+  });
+  wrap.innerHTML = '';
+  active.forEach(m => {
+    const qty = parseInt(document.querySelector(`.mc[data-id="${m.id}"] input`)?.value) || 1;
+    for (let i = 0; i < qty; i++) {
+      const p = (prev[m.id] || [])[i] || {};
+      const row = document.createElement('div');
+      row.className = 'targa-row'; row.dataset.mezzo = m.id; row.dataset.idx = i;
+      row.innerHTML = `<div class="t-label">${m.icon} ${m.name}${qty > 1 ? ' #'+(i+1) : ''}</div>
+        <input type="text" placeholder="Targa (es. MI 123AB)" data-f="t" value="${p.t||''}">
+        <input type="text" placeholder="Modello (es. Iveco Daily)" data-f="mod" value="${p.mod||''}">
+        <button class="del-btn" onclick="this.closest('.targa-row').remove()" style="width:46px;height:46px">×</button>`;
+      wrap.appendChild(row);
+    }
+  });
+}
+
+/* ══════════════════════════════════════════════
+   UI HELPERS
+══════════════════════════════════════════════ */
+function setTurno(t) { turno = t; document.getElementById('btn-d').classList.toggle('on', t==='D'); document.getElementById('btn-n').classList.toggle('on', t==='N'); }
+function pickDay(el) { document.querySelectorAll('.day-pill').forEach(d => d.classList.remove('on')); el.classList.add('on'); updateAll(); }
+function toggleSec(hdr) { const b = hdr.nextElementSibling, ch = hdr.querySelector('.sec-chev'); b.classList.toggle('open'); ch.classList.toggle('open', b.classList.contains('open')); }
+function addPers(lid) { const l = document.getElementById(lid); const d = document.createElement('div'); d.className = 'pers-row'; d.innerHTML = `<input type="text" placeholder="Nome e cognome"><button class="del-btn" onclick="delRow(this)">×</button>`; l.appendChild(d); }
+function delRow(btn) { const r = btn.closest('.pers-row, .targa-row'); if (r.classList.contains('targa-row') || r.parentElement.children.length > 1) r.remove(); }
+function addAtt() {
+  attN++;
+  const l = document.getElementById('att-list');
+  const d = document.createElement('div'); d.className = 'att-card';
+  d.innerHTML = `<div class="att-card-num">RIGA ${attN}</div>
+    <button class="att-del" onclick="this.closest('.att-card').remove()">×</button>
+    <div class="att-grid">
+      <div class="field" style="grid-column:1/-1"><span class="lbl">Tipologia attività</span><input type="text" placeholder="es. Posa cavi, Armatura, Scavi..."></div>
+      <div class="field"><span class="lbl">Quantità</span><input type="text" placeholder="es. 120 m"></div>
+      <div class="field"><span class="lbl">Ai Picc. N°</span><input type="text" placeholder="es. 42–45"></div>
+    </div>`;
+  l.appendChild(d);
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+
+/* ══════════════════════════════════════════════
+   PATH & UPDATE
+══════════════════════════════════════════════ */
+function getPathInfo() {
+  const now   = new Date();
+  const anno  = document.getElementById('anno').value || now.getFullYear();
+  const mStr  = document.getElementById('mese').value?.slice(5) || String(now.getMonth()+1).padStart(2,'0');
+  const meseN = parseInt(mStr) || (now.getMonth()+1);
+  const meseName = String(meseN).padStart(2,'0') + '-' + MESI_IT[meseN-1];
+
+  // Data reale del giorno — usa il campo mese+anno + giorno selezionato per costruire DD-MM-YYYY
+  const dayPills = ['L','Ma','Me','G','V','S','D'];
+  const dayOfWeekIdx = [...document.querySelectorAll('.day-pill')].findIndex(p => p.classList.contains('on'));
+  // Mappa pill → giorno ISO (0=lun,6=dom secondo pill order)
+  const isoDay = dayOfWeekIdx >= 0 ? dayOfWeekIdx : now.getDay(); // 0=lun pill
+
+  // Costruisce una data concreta: prende il primo giorno del mese/anno selezionato
+  // e avanza fino al giorno della settimana corretto nella settimana corrente
+  const refDate = new Date(now);
+  // Allinea al giorno pill selezionato nella settimana corrente
+  const currentDow = (now.getDay() + 6) % 7; // 0=lun
+  const targetDow  = dayOfWeekIdx >= 0 ? dayOfWeekIdx : currentDow;
+  const diff = targetDow - currentDow;
+  refDate.setDate(now.getDate() + diff);
+
+  const dd = String(refDate.getDate()).padStart(2,'0');
+  const mm = String(refDate.getMonth()+1).padStart(2,'0');
+  const yyyy = refDate.getFullYear();
+  const giornoFolder = `${dd}-${mm}-${yyyy}`; // es. "10-04-2026"
+
+  const cod = (document.getElementById('codice').value || 'COD-CANTIERE').replace(/[/\\:*?"<>|]/g,'-');
+  return { anno, meseN, meseName, meseFull: MESI_FULL[meseN-1], giorno: giornoFolder, cod };
+}
+function updateAll() {
+  const p = getPathInfo();
+  const path = `1 - RAPPORTINI / ${p.anno} / ${p.meseName} / ${p.giorno} / ${p.cod}`;
+  document.getElementById('gdrive-path-badge').textContent = path;
+  const checks = [
+    document.getElementById('cantiere').value.trim(),
+    document.getElementById('codice').value.trim(),
+    document.getElementById('appaltatore').value.trim(),
+    document.getElementById('preposto').value.trim(),
+    document.getElementById('n_operai').value.trim(),
+  ];
+  document.getElementById('progress').style.width = (checks.filter(Boolean).length / checks.length * 100) + '%';
+}
+
+/* ══════════════════════════════════════════════
+   RACCOLTA DATI
+══════════════════════════════════════════════ */
+function collectData() {
+  const p = getPathInfo();
+  const mdo  = Array.from(document.querySelectorAll('#mdo-list input')).map(i => i.value).filter(v => v.trim());
+  const mepc = Array.from(document.querySelectorAll('#mepc-list input')).map(i => i.value).filter(v => v.trim());
+  const mezziSel = MEZZI.filter(m => sel[m.id]).map(m => {
+    const qty = parseInt(document.querySelector(`.mc[data-id="${m.id}"] input`)?.value) || 1;
+    return { id: m.id, nome: m.name, qty };
+  });
+  const targhe = Array.from(document.querySelectorAll('#targhe-wrap .targa-row')).map(r => ({
+    mezzo: r.dataset.mezzo, nome: MEZZI.find(m => m.id === r.dataset.mezzo)?.name || '',
+    targa: r.querySelector('[data-f=t]')?.value || '', modello: r.querySelector('[data-f=mod]')?.value || '',
+  }));
+  const att = Array.from(document.querySelectorAll('#att-list .att-card')).map((c, i) => {
+    const inp = c.querySelectorAll('input');
+    return { n: i+1, tipo: inp[0]?.value||'', qty: inp[1]?.value||'', picc: inp[2]?.value||'' };
+  }).filter(r => r.tipo.trim());
+  return {
+    cantiere: document.getElementById('cantiere').value,
+    codice:   document.getElementById('codice').value,
+    appaltatore: document.getElementById('appaltatore').value,
+    preposto: document.getElementById('preposto').value,
+    n_operai: document.getElementById('n_operai').value,
+    turno:    turno === 'D' ? 'Diurno' : 'Notturno',
+    settimana: document.getElementById('settimana').value,
+    anno: p.anno, mese: p.meseName, meseFull: p.meseFull, giorno: p.giorno,
+    mdo, mepc, mezziSel, targhe, att,
+    int_d: { bin: document.getElementById('id_bin').value, usc: document.getElementById('id_usc').value, rie: document.getElementById('id_rie').value, fir: document.getElementById('id_fir').value },
+    int_n: { bin: document.getElementById('in_bin').value, usc: document.getElementById('in_usc').value, rie: document.getElementById('in_rie').value, fir: document.getElementById('in_fir').value },
+    path: { root: '1 - RAPPORTINI', anno: p.anno, mese: p.meseName, giorno: p.giorno, codice: p.cod },
+    generato: new Date().toLocaleString('it-IT'),
+  };
+}
+
+/* ══════════════════════════════════════════════
+   MODALE CONFERMA
+══════════════════════════════════════════════ */
+function onSaveClick() {
+  const cantiere = document.getElementById('cantiere').value.trim();
+  const codice   = document.getElementById('codice').value.trim();
+  if (!cantiere || !codice) { showToast('⚠ Inserisci almeno cantiere e codice', 'warn'); return; }
+  if (!getCfg().key) {
+    showToast('⚠ Prima attiva Google Drive (⚙ in alto a destra)', 'warn');
+    openCfgModal(); return;
+  }
+  const d = collectData();
+  const p = getPathInfo();
+  // Costruisce riepilogo
+  const rows = [
+    ['Cantiere',    d.cantiere    || '—'],
+    ['Codice',      d.codice      || '—'],
+    ['Appaltatore', d.appaltatore || '—'],
+    ['Turno',       d.turno],
+    ['Data',        `${d.giorno} ${d.mese} ${d.anno}`],
+    ['Operai',      d.n_operai    || '—'],
+    ['Mezzi',       d.mezziSel.length ? d.mezziSel.map(m => m.nome + ' ×' + m.qty).join(', ') : '—'],
+    ['Attività',    d.att.length ? d.att.length + ' righe inserite' : '—'],
+  ];
+  document.getElementById('recap-content').innerHTML = rows.map(([k,v]) =>
+    `<div class="recap-row"><span class="recap-key">${k}</span><span class="recap-val">${v}</span></div>`
+  ).join('');
+  document.getElementById('recap-path').innerHTML = `📁 ${d.path.root}/${d.anno}/${d.mese}/${d.giorno}/${d.codice}`;
+  openModal('modal-confirm');
+}
+
+/* ══════════════════════════════════════════════
+   SALVATAGGIO GOOGLE DRIVE (Service Account JWT)
+══════════════════════════════════════════════ */
+const PRESET_EMAIL  = 'rapportini-app@rapportini-hitec.iam.gserviceaccount.com';
+const PRESET_FOLDER = '1SKCOAfkfkMEnWRaSrt-cWhpvja9teWVg';
+const PRESET_KEY    = "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDMzAN1i9//BK1A\n/TRRLTQ5r7oZuDw9+2FAXbWeHtbhyvZKvCEsFn3LVB9ceZ9IBOC3tNiXA1MZ6FTb\nEcu3pVqC2akIbR7NBLoyfBHUpAJEqsuZDlpe6MCfqmjnvUwvIeCbusu4GMQaOUQC\nkHuMjeQJVyoB0LZoEjX3uUzrBgSbfxkKDW+yB+Iv+8TeQjOdxA5s6jO/3Tz6/4PJ\nIaWN6UWN7W3/8mbODx9vyfmWEAUlOdfWcF5Db98R239kI7vOvKs5HuYNOUPHb7Po\nZfY0VPQpSC+BtqnVd2rOw5P14TzNlQ6gPSI8bK5Nxrtzud+9p1HEAdnRNDSkymqN\ndrdlITuvAgMBAAECggEAEQN33BmRM8nrLMV8RawoNQykvMNB+fI6y5KdZnPwbRSj\n7mR/qv55V912t4OBGIYTNx/GiJElo7bZ6dMqJekOQmWbtc/+6ZBVeaE2CADSEWtQ\n+7emCVFzwy/whCQFQrshQj678uDX1cfhHwdqxCv7gE0l972jkbTFl/1kZvf6hQJd\nddXAwmKgYx8UF9YobiZaX9UOVZA0rL5db6zBI7ok+XSEtb21oLHJs1vJyXLjCggm\nGzLerutvaf3K4lk4j5ChdAzHDh3V5THteQEmIqPukbNSbHdYMffxI6ltE8eC4Ssy\nzaHtrK63C/ljmatmPBab2fqIq790r2Q3LKbLbhFmWQKBgQDw3DXEAPaDyrhMAq+X\nYlunhVkxJ32su2LZGwdNbPy/1hxorxM18Mujy3PLVUOv+HeoTmTmcN+I4fUrUR/+\nxFUjKzbgSEsmW9ASPIg6uaEzN0t9BlP5FlpuMCTX5/xPjm/DkXlQ6DUSSPeYBct3\nLLmyhdTCb1x+hh504FFw+WVGNwKBgQDZq35CAgSdD7xls3n1lDcTsa9UhZZCjOku\n5fQgMwNjV38asqFLmYMJDCg8QQBoaOlkz+p3MpiwxkJ+SqJdS2yJyRr2tFBQw8VP\nY8FfbJfQYpTZDFvdbJw9vMG6zHA3P2CKJJI+hw0LrqXsA4Bu8BqZdI9hJKnqyhBk\nIeXFVYZ6SQKBgE067up4PJMpr0qAGfl6ilT+xwih1wRJ2Xov1nmXFrwUVWujp49G\nNKXCmNB7+IY2L3gCGwxg6OwlN825535zSbFLK/9ibuZPzjnquuvJlcysUEI4gzh9\nWGW4fjfUpOyFiYS14qZ0rn+8cdeHFCSUbL63du8ZchkHvEBRpQuKjFSlAoGAISFY\nE0XpW9qES1p46qcHhwjZbdzzVOfLqia39JqvHlS39OFRaYdRCXR/P0SJglrNg1me\nD0x1LxrODhjgA6EyQPqKDxi8zL4vbvj4+sQ1izMmAq894ELiuQbc2ci6H76WvA/6\n7mdx1eBcQsL5rmj/M3IpTJje/+yHeCYsqc9tq3kCgYADdom1m3GKFxCRcI47wKdY\nxtQxwWFdNMuA3PUZsgDt0+s/8ll+E8j2MKqwZWan49CRDdT5ZhAC1IyEJvfEn6+m\ntz0D+Py92oanhN6nccdq10IUv4u5MA108uQ79WJwhP3HsM5jkwg5r44lnJ9gJkRk\nks2PMCwa+mtoeEOdbParTQ==\n-----END PRIVATE KEY-----\n";
+
+function getCfg() {
+  return {
+    email:  localStorage.getItem('sa_email')  || PRESET_EMAIL,
+    key:    localStorage.getItem('sa_key')    || PRESET_KEY,
+    folder: localStorage.getItem('sa_folder') || PRESET_FOLDER,
+  };
+}
+
+// Base64url utilities
+function b64url(str) {
+  return btoa(str).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+}
+function b64urlUint8(arr) {
+  let s = '';
+  arr.forEach(b => s += String.fromCharCode(b));
+  return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+}
+
+async function getAccessToken(cfg) {
+  const now = Math.floor(Date.now() / 1000);
+  const header  = b64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
+  const payload = b64url(JSON.stringify({
+    iss: cfg.email, scope: 'https://www.googleapis.com/auth/drive',
+    aud: 'https://oauth2.googleapis.com/token',
+    exp: now + 3600, iat: now,
+  }));
+  const sigInput = `${header}.${payload}`;
+
+  // Import RSA private key
+  const pem = cfg.key.replace(/-----BEGIN.*?-----/g,'').replace(/-----END.*?-----/g,'').replace(/\s/g,'');
+  const keyDer = Uint8Array.from(atob(pem), c => c.charCodeAt(0));
+  const cryptoKey = await crypto.subtle.importKey(
+    'pkcs8', keyDer.buffer,
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false, ['sign']
+  );
+  const sig = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', cryptoKey, new TextEncoder().encode(sigInput));
+  const jwt = `${sigInput}.${b64urlUint8(new Uint8Array(sig))}`;
+
+  const res = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`,
+  });
+  const json = await res.json();
+  if (!json.access_token) throw new Error(json.error_description || 'Token error');
+  return json.access_token;
+}
+
+async function driveCreateFolder(token, name, parentId) {
+  const q = encodeURIComponent(`name='${name}' and '${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+  const listRes = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)&supportsAllDrives=true&includeItemsFromAllDrives=true`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  const list = await listRes.json();
+  if (list.files && list.files.length > 0) return list.files[0].id;
+  const res = await fetch('https://www.googleapis.com/drive/v3/files?supportsAllDrives=true', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, mimeType: 'application/vnd.google-apps.folder', parents: [parentId] }),
+  });
+  const f = await res.json();
+  if (!f.id) throw new Error(`Creazione cartella "${name}" fallita: ${JSON.stringify(f)}`);
+  return f.id;
+}
+
+async function driveUploadFile(token, name, content, mimeType, parentId) {
+  // Step 1: create file metadata
+  const metaRes = await fetch('https://www.googleapis.com/drive/v3/files?fields=id,name&supportsAllDrives=true', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, mimeType, parents: [parentId] }),
+  });
+  const meta = await metaRes.json();
+  if (!meta.id) throw new Error(`Creazione file fallita: ${JSON.stringify(meta)}`);
+
+  // Step 2: upload content
+  const uploadRes = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${meta.id}?uploadType=media&supportsAllDrives=true`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': mimeType },
+    body: content,
+  });
+  const result = await uploadRes.json();
+  if (!result.id) throw new Error(`Upload contenuto fallito: ${JSON.stringify(result)}`);
+  return result;
+}
+
+async function doSave() {
+  closeModal('modal-confirm');
+  setBtnLoading(true);
+
+  const cfg = getCfg();
+  const d   = collectData();
+  const p   = getPathInfo();
+
+  let step = '';
+  try {
+    step = 'Connessione a Google Drive';
+    showToast(step + '…', 'warn');
+    const token = await getAccessToken(cfg);
+
+    step = 'Creazione struttura cartelle';
+    showToast(step + '…', 'warn');
+    const rootId   = cfg.folder;
+    const annoId   = await driveCreateFolder(token, String(p.anno), rootId);
+    const meseId   = await driveCreateFolder(token, p.meseName, annoId);
+    const giornoId = await driveCreateFolder(token, p.giorno, meseId);
+    const codId    = await driveCreateFolder(token, p.cod, giornoId);
+
+    step = 'Preparazione file';
+    const safeName   = `${d.codice}_${d.anno}-${d.mese}-${d.giorno}_${d.turno}`;
+    const txtContent = buildDocContent(d);
+    const csvContent = buildCSV(d);
+
+    step = 'Caricamento file TXT';
+    showToast(step + '…', 'warn');
+    await driveUploadFile(token, `Rapportino_${safeName}.txt`, txtContent, 'text/plain', codId);
+
+    step = 'Caricamento file CSV';
+    showToast(step + '…', 'warn');
+    await driveUploadFile(token, `Rapportino_${safeName}.csv`, csvContent, 'text/csv', codId);
+
+    setBtnLoading(false);
+    showToast('✓ Rapportino salvato su Google Drive!', 'ok');
+
+  } catch (err) {
+    setBtnLoading(false);
+    console.error('Errore in fase:', step, err);
+    showToast(`✗ Errore (${step}): ${err.message || 'sconosciuto'}`, 'err');
+  }
+}
+
+/* ══════════════════════════════════════════════
+   CONTENUTO FILE
+══════════════════════════════════════════════ */
+function buildDocContent(d) {
+  const S = '═'.repeat(52), s = '─'.repeat(52);
+  const lines = [
+    'HI.TEC. / Italia s.r.l.', 'RAPPORTINO GIORNALIERO DI LAVORO', S, '',
+    `Cantiere    : ${d.cantiere    || '—'}`,
+    `Codice      : ${d.codice      || '—'}`,
+    `Appaltatore : ${d.appaltatore || '—'}`,
+    `Data        : ${d.giorno} — ${d.mese} — ${d.anno}  |  Settimana: ${d.settimana || '—'}`,
+    `Turno       : ${d.turno}`, '', s, 'PERSONALE', s,
+    `Preposto alla sicurezza : ${d.preposto || '—'}`,
+    `Numero operai in turno  : ${d.n_operai || '—'}`,
+  ];
+  if (d.mdo.length)  lines.push(`MI-MDO  : ${d.mdo.join(', ')}`);
+  if (d.mepc.length) lines.push(`MI-MEPC : ${d.mepc.join(', ')}`);
+  lines.push('', s, 'MEZZI UTILIZZATI', s);
+  if (d.mezziSel.length) {
+    d.mezziSel.forEach(m => lines.push(`  ${m.nome.padEnd(14)}: ${m.qty} unità`));
+    lines.push('', 'Targhe e modelli:');
+    d.targhe.forEach(t => lines.push(`  ${t.nome.padEnd(14)}| Targa: ${t.targa||'—'} | Modello: ${t.modello||'—'}`));
+  } else lines.push('  Nessun mezzo selezionato');
+  lines.push('', s, 'ATTIVITÀ SVOLTE', s);
+  if (d.att.length) d.att.forEach(a => { let l = `  ${a.n}. ${a.tipo}`; if (a.qty) l += `  —  Quantità: ${a.qty}`; if (a.picc) l += `  —  Picc. N°: ${a.picc}`; lines.push(l); });
+  else lines.push('  Nessuna attività inserita');
+  const hasInt = d.int_d.bin || d.int_d.usc || d.int_n.bin || d.int_n.usc;
+  if (hasInt) {
+    lines.push('', s, 'INTERRUZIONI', s);
+    if (d.int_d.bin || d.int_d.usc) lines.push(`  Diurna   — Binario: ${d.int_d.bin||'—'} | Uscita: ${d.int_d.usc||'—'} | Rientro: ${d.int_d.rie||'—'} | Firma: ${d.int_d.fir||'—'}`);
+    if (d.int_n.bin || d.int_n.usc) lines.push(`  Notturna — Binario: ${d.int_n.bin||'—'} | Uscita: ${d.int_n.usc||'—'} | Rientro: ${d.int_n.rie||'—'} | Firma: ${d.int_n.fir||'—'}`);
+  }
+  lines.push('', S, `Generato il ${d.generato}`, S);
+  return lines.join('\n');
+}
+function buildCSV(d) {
+  const rows = [
+    ['HI.TEC. / Italia s.r.l. — Rapportino Giornaliero di Lavoro'], [],
+    ['Cantiere', d.cantiere, 'Codice', d.codice],
+    ['Appaltatore', d.appaltatore],
+    ['Data', d.giorno, 'Mese', d.mese, 'Anno', d.anno, 'Settimana', d.settimana],
+    ['Turno', d.turno], [],
+    ['PERSONALE'], ['Preposto', d.preposto, 'Operai', d.n_operai],
+  ];
+  if (d.mdo.length)  rows.push(['MI-MDO',  ...d.mdo]);
+  if (d.mepc.length) rows.push(['MI-MEPC', ...d.mepc]);
+  rows.push([], ['MEZZI UTILIZZATI'], ['Mezzo', 'Quantità']);
+  d.mezziSel.forEach(m => rows.push([m.nome, m.qty]));
+  rows.push([], ['TARGHE E MODELLI'], ['Mezzo', 'Targa', 'Modello']);
+  d.targhe.forEach(t => rows.push([t.nome, t.targa, t.modello]));
+  rows.push([], ['ATTIVITÀ SVOLTE'], ['N°', 'Tipologia', 'Quantità', 'Ai Picc. N°']);
+  d.att.forEach(a => rows.push([a.n, a.tipo, a.qty, a.picc]));
+  rows.push([], ['INTERRUZIONI'], ['Tipo', 'Binario', 'Uscita', 'Rientro', 'Firma']);
+  rows.push(['Diurna', d.int_d.bin, d.int_d.usc, d.int_d.rie, d.int_d.fir]);
+  rows.push(['Notturna', d.int_n.bin, d.int_n.usc, d.int_n.rie, d.int_n.fir]);
+  rows.push([], ['Generato il', d.generato]);
+  return rows.map(r => r.map(c => `"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\r\n');
+}
+
+/* ══════════════════════════════════════════════
+   CONFIGURAZIONE SERVICE ACCOUNT
+══════════════════════════════════════════════ */
+function openCfgModal() {
+  const cfg = getCfg();
+  document.getElementById('cfg-email').value  = cfg.email  || PRESET_EMAIL;
+  document.getElementById('cfg-key').value    = cfg.key    || '';
+  document.getElementById('cfg-folder').value = cfg.folder || PRESET_FOLDER;
+  updateCfgStatusBadge();
+  openModal('modal-cfg');
+}
+function saveCfg() {
+  const key = document.getElementById('cfg-key').value.trim();
+  if (!key || !key.includes('PRIVATE KEY')) { showToast('⚠ Incolla la chiave privata completa', 'warn'); return; }
+  localStorage.setItem('sa_email',  PRESET_EMAIL);
+  localStorage.setItem('sa_key',    key);
+  localStorage.setItem('sa_folder', PRESET_FOLDER);
+  updateCfgDot();
+  const banner = document.getElementById('first-run-banner');
+  if (banner) banner.style.display = 'none';
+  closeModal('modal-cfg');
+  showToast('✓ Attivato! Puoi iniziare a salvare rapportini.', 'ok');
+}
+function updateCfgDot() {
+  const dot = document.getElementById('cfg-dot');
+  dot.classList.add('live');
+  dot.classList.add('show');
+}
+function updateCfgStatusBadge() {
+  const el = document.getElementById('cfg-status-badge');
+  el.innerHTML = `<div class="status-badge ok"><span class="status-dot"></span>Attivo — salvataggio diretto su Drive abilitato</div>`;
+}
+
+/* ══════════════════════════════════════════════
+   BTN LOADING
+══════════════════════════════════════════════ */
+function setBtnLoading(on) {
+  const btn = document.getElementById('btn-save');
+  if (on) { btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Salvataggio…'; }
+  else    { btn.disabled = false; btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg"><path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="rgba(255,255,255,.85)"/><path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="rgba(255,255,255,.85)"/><path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="rgba(255,255,255,.85)"/><path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#fff"/><path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#fff"/><path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#fff"/></svg> Salva su Google Drive`; }
+}
+
+/* ══════════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════════ */
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `toast ${type}`; t.style.display = 'block';
+  clearTimeout(t._t); t._t = setTimeout(() => { t.style.display = 'none'; }, 4500);
+}
+
+/* ══════════════════════════════════════════════
+   RESET
+══════════════════════════════════════════════ */
+function resetForm() {
+  if (!confirm('Resettare il modulo per un nuovo rapportino?')) return;
+  document.querySelectorAll('input[type=text], input[type=time]').forEach(i => i.value = '');
+  document.getElementById('att-list').innerHTML = ''; attN = 0;
+  for (let i = 0; i < 5; i++) addAtt();
+  Object.keys(sel).forEach(k => delete sel[k]);
+  buildMezzi();
+  document.getElementById('targhe-wrap').innerHTML = '<p style="font-size:12px;color:var(--text3);font-style:italic;padding:4px 0">Nessun mezzo selezionato.</p>';
+  init();
+}
+
+/* ══════════════════════════════════════════════
+   AUTENTICAZIONE & GESTIONE UTENTI
+══════════════════════════════════════════════ */
+
+// Hash semplice (SHA-256) per le password
+async function hashPassword(pw) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+// Nome file utenti su Drive
+const USERS_FILENAME = '_utenti_app.json';
+let usersFileId = null;
+let usersCache  = null;
+
+async function loadUsers(token) {
+  const cfg = getCfg();
+  const q   = encodeURIComponent(`name='${USERS_FILENAME}' and '${cfg.folder}' in parents and trashed=false`);
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)&supportsAllDrives=true&includeItemsFromAllDrives=true`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  const list = await res.json();
+  if (list.files && list.files.length > 0) {
+    usersFileId = list.files[0].id;
+    const content = await fetch(`https://www.googleapis.com/drive/v3/files/${usersFileId}?alt=media&supportsAllDrives=true`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    usersCache = await content.json();
+  } else {
+    const defaultHash = await hashPassword('admin123');
+    usersCache = {
+      users: [{ username: 'admin', passwordHash: defaultHash, role: 'admin' }]
+    };
+    await saveUsersToFile(token);
+    showToast('✓ Primo avvio: utente admin creato (password: admin123)', 'warn');
+  }
+  return usersCache;
+}
+
+async function saveUsersToFile(token) {
+  const cfg     = getCfg();
+  const content = JSON.stringify(usersCache, null, 2);
+  if (usersFileId) {
+    const res = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${usersFileId}?uploadType=media&supportsAllDrives=true`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: content,
+    });
+    const r = await res.json();
+    if (!r.id) throw new Error(`Salvataggio utenti fallito: ${JSON.stringify(r)}`);
+  } else {
+    // Step 1: crea metadati
+    const metaRes = await fetch('https://www.googleapis.com/drive/v3/files?fields=id&supportsAllDrives=true', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: USERS_FILENAME, mimeType: 'application/json', parents: [cfg.folder] }),
+    });
+    const meta = await metaRes.json();
+    if (!meta.id) throw new Error(`Creazione file utenti fallita: ${JSON.stringify(meta)}`);
+    usersFileId = meta.id;
+    // Step 2: carica contenuto
+    await fetch(`https://www.googleapis.com/upload/drive/v3/files/${meta.id}?uploadType=media&supportsAllDrives=true`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: content,
+    });
+  }
+}
+
+// Stato sessione
+let currentUser = null;
+
+function getSession() {
+  try { return JSON.parse(sessionStorage.getItem('hitec_session') || 'null'); }
+  catch { return null; }
+}
+function setSession(user) {
+  sessionStorage.setItem('hitec_session', JSON.stringify(user));
+  currentUser = user;
+}
+function clearSession() {
+  sessionStorage.removeItem('hitec_session');
+  currentUser = null;
+}
+
+async function doLogin() {
+  const username = document.getElementById('login-user').value.trim().toLowerCase();
+  const password = document.getElementById('login-pass').value;
+  const errEl    = document.getElementById('login-err');
+  const btn      = document.getElementById('btn-login');
+
+  if (!username || !password) {
+    errEl.textContent = 'Inserisci username e password.';
+    errEl.classList.add('show'); return;
+  }
+  btn.disabled = true; btn.textContent = 'Accesso in corso…';
+  errEl.classList.remove('show');
+
+  try {
+    const token = await getAccessToken(getCfg());
+    await loadUsers(token);
+    const hash = await hashPassword(password);
+    const user = usersCache.users.find(u => u.username === username && u.passwordHash === hash);
+    if (!user) {
+      errEl.textContent = 'Username o password non corretti.';
+      errEl.classList.add('show');
+      btn.disabled = false; btn.textContent = 'Entra'; return;
+    }
+    setSession(user);
+    showApp(user);
+  } catch(e) {
+    errEl.textContent = 'Errore di connessione. Verifica la rete e riprova.';
+    errEl.classList.add('show');
+    btn.disabled = false; btn.textContent = 'Entra';
+  }
+}
+
+function showApp(user) {
+  document.getElementById('login-screen').classList.remove('show');
+  document.getElementById('btn-logout').style.display = 'flex';
+  if (user.role === 'admin') {
+    document.getElementById('admin-bar').style.display = 'flex';
+  }
+}
+
+function doLogout() {
+  if (!confirm('Vuoi uscire dall\'app?')) return;
+  clearSession();
+  document.getElementById('btn-logout').style.display = 'none';
+  document.getElementById('admin-bar').style.display = 'none';
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-err').classList.remove('show');
+  document.getElementById('login-screen').classList.add('show');
+}
+
+function checkSession() {
+  const session = getSession();
+  if (session) {
+    currentUser = session;
+    showApp(session);
+  } else {
+    document.getElementById('login-screen').classList.add('show');
+  }
+}
+
+/* ══════════════════════════════════════════════
+   PANNELLO ADMIN
+══════════════════════════════════════════════ */
+async function openAdminPanel() {
+  openModal('modal-admin');
+  const statusEl = document.getElementById('admin-status');
+  const statusTxt = document.getElementById('admin-status-text');
+  statusEl.className = 'status-badge warn';
+  statusTxt.textContent = 'Caricamento utenti da Drive…';
+  try {
+    const token = await getAccessToken(getCfg());
+    await loadUsers(token);
+    renderUserTable();
+    statusEl.className = 'status-badge ok';
+    statusTxt.textContent = `${usersCache.users.length} utenti registrati`;
+  } catch(e) {
+    statusEl.className = 'status-badge err';
+    statusTxt.textContent = 'Errore caricamento utenti';
+  }
+}
+
+function renderUserTable() {
+  const tbody = document.getElementById('user-tbody');
+  tbody.innerHTML = '';
+  (usersCache?.users || []).forEach((u, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="font-weight:500">${u.username}</td>
+      <td><span class="user-role ${u.role}">${u.role}</span></td>
+      <td>${u.username !== 'admin' ? `<button class="btn-del-user" onclick="deleteUser(${i})">Elimina</button>` : '<span style="font-size:11px;color:var(--text3)">—</span>'}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function deleteUser(idx) {
+  if (!confirm(`Eliminare l'utente "${usersCache.users[idx].username}"?`)) return;
+  usersCache.users.splice(idx, 1);
+  renderUserTable();
+}
+
+async function addUser() {
+  const username = document.getElementById('new-username').value.trim().toLowerCase();
+  const password = document.getElementById('new-password').value;
+  const role     = document.getElementById('new-role').value;
+  if (!username || password.length < 6) {
+    showToast('⚠ Username e password (min. 6 caratteri) richiesti', 'warn'); return;
+  }
+  if (usersCache.users.find(u => u.username === username)) {
+    showToast('⚠ Username già esistente', 'warn'); return;
+  }
+  const hash = await hashPassword(password);
+  usersCache.users.push({ username, passwordHash: hash, role });
+  document.getElementById('new-username').value = '';
+  document.getElementById('new-password').value = '';
+  renderUserTable();
+  showToast(`✓ Utente "${username}" aggiunto (non ancora salvato)`, 'ok');
+}
+
+async function saveUsers() {
+  const statusEl  = document.getElementById('admin-status');
+  const statusTxt = document.getElementById('admin-status-text');
+  statusEl.className = 'status-badge warn';
+  statusTxt.textContent = 'Salvataggio…';
+  try {
+    const token = await getAccessToken(getCfg());
+    await saveUsersToFile(token);
+    statusEl.className = 'status-badge ok';
+    statusTxt.textContent = `Salvato — ${usersCache.users.length} utenti`;
+    showToast('✓ Utenti salvati su Google Drive', 'ok');
+  } catch(e) {
+    statusEl.className = 'status-badge err';
+    statusTxt.textContent = 'Errore salvataggio';
+    showToast('✗ Errore durante il salvataggio', 'err');
+  }
+}
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+});
+
+init();
+checkSession();
+</script>
+</body>
+</html>
