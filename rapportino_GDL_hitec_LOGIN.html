@@ -347,11 +347,27 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
         <span class="lbl">Appaltatore</span>
         <input type="text" id="appaltatore" placeholder="Ragione sociale appaltatore" oninput="updateAll()">
       </div>
-      <div class="grid g3" style="margin-bottom:10px">
-        <div class="field"><span class="lbl">Mese</span><input type="month" id="mese" oninput="updateAll()"></div>
-        <div class="field"><span class="lbl">Anno</span><input type="number" id="anno" oninput="updateAll()"></div>
+      <div class="grid g2" style="margin-bottom:10px">
+        <div class="field">
+          <span class="lbl">Mese</span>
+          <select id="mese" oninput="updateAll()">
+            <option value="01">Gennaio</option>
+            <option value="02">Febbraio</option>
+            <option value="03">Marzo</option>
+            <option value="04">Aprile</option>
+            <option value="05">Maggio</option>
+            <option value="06">Giugno</option>
+            <option value="07">Luglio</option>
+            <option value="08">Agosto</option>
+            <option value="09">Settembre</option>
+            <option value="10">Ottobre</option>
+            <option value="11">Novembre</option>
+            <option value="12">Dicembre</option>
+          </select>
+        </div>
         <div class="field"><span class="lbl">Settimana n°</span><input type="number" id="settimana" min="1" max="53" placeholder="1–53" oninput="updateAll()"></div>
       </div>
+      <input type="hidden" id="anno">
       <div class="grid g2">
         <div class="field">
           <span class="lbl">Turno</span>
@@ -383,26 +399,36 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
       <span class="sec-ok" id="ok2"></span><span class="sec-chev">▾</span>
     </div>
     <div class="sec-body">
-      <div class="field" style="margin-bottom:10px">
+      <div class="field" style="margin-bottom:14px">
         <span class="lbl">Preposto alla sicurezza</span>
         <input type="text" id="preposto" placeholder="Nome e cognome" oninput="updateAll()">
       </div>
-      <div class="operai-block">
-        <span class="lbl">👷 Numero operai in turno</span>
-        <input type="number" id="n_operai" min="0" max="99" placeholder="0" oninput="updateAll()">
-      </div>
-      <div class="grid g2">
+
+      <div class="divider"></div>
+      <span class="sub-label" style="margin-bottom:.75rem">Personale abilitato</span>
+      <div class="grid g2" style="margin-bottom:14px">
         <div>
-          <span class="sub-label">Personale abilitato MI-MDO</span>
+          <span class="sub-label" style="font-size:10px;color:var(--accent)">MI-MDO</span>
           <div id="mdo-list"><div class="pers-row"><input type="text" placeholder="Nome e cognome"><button class="del-btn" onclick="delRow(this)">×</button></div></div>
           <button class="add-btn" onclick="addPers('mdo-list')">+ aggiungi</button>
         </div>
         <div>
-          <span class="sub-label">Personale abilitato MI-MEPC</span>
+          <span class="sub-label" style="font-size:10px;color:var(--accent)">MI-MEPC</span>
           <div id="mepc-list"><div class="pers-row"><input type="text" placeholder="Nome e cognome"><button class="del-btn" onclick="delRow(this)">×</button></div></div>
           <button class="add-btn" onclick="addPers('mepc-list')">+ aggiungi</button>
         </div>
       </div>
+
+      <div class="divider"></div>
+      <span class="sub-label" style="margin-bottom:.75rem">Operai</span>
+      <div class="operai-block" style="margin-bottom:10px">
+        <span class="lbl">👷 Numero operai in turno</span>
+        <input type="number" id="n_operai" min="0" max="99" placeholder="0" oninput="updateAll()">
+      </div>
+      <div id="operai-list">
+        <div class="pers-row"><input type="text" placeholder="Nome e cognome operaio"><button class="del-btn" onclick="delRow(this)">×</button></div>
+      </div>
+      <button class="add-btn" onclick="addPers('operai-list')">+ aggiungi operaio</button>
     </div>
   </div>
 
@@ -565,7 +591,7 @@ const sel = {};
 function init() {
   const now = new Date();
   document.getElementById('anno').value  = now.getFullYear();
-  document.getElementById('mese').value  = now.toISOString().slice(0, 7);
+  document.getElementById('mese').value  = String(now.getMonth()+1).padStart(2,'0');
   const wk = Math.ceil(((now - new Date(now.getFullYear(),0,1)) / 86400000 + new Date(now.getFullYear(),0,1).getDay() + 1) / 7);
   document.getElementById('settimana').value = wk;
   document.getElementById('hdr-date').textContent = now.toLocaleDateString('it-IT', {weekday:'short', day:'numeric', month:'short'});
@@ -660,7 +686,7 @@ function openModal(id)  { document.getElementById(id).classList.add('open'); }
 function getPathInfo() {
   const now   = new Date();
   const anno  = document.getElementById('anno').value || now.getFullYear();
-  const mStr  = document.getElementById('mese').value?.slice(5) || String(now.getMonth()+1).padStart(2,'0');
+  const mStr  = document.getElementById('mese').value || String(now.getMonth()+1).padStart(2,'0');
   const meseN = parseInt(mStr) || (now.getMonth()+1);
   const meseName = String(meseN).padStart(2,'0') + '-' + MESI_IT[meseN-1];
 
@@ -708,6 +734,7 @@ function collectData() {
   const p = getPathInfo();
   const mdo  = Array.from(document.querySelectorAll('#mdo-list input')).map(i => i.value).filter(v => v.trim());
   const mepc = Array.from(document.querySelectorAll('#mepc-list input')).map(i => i.value).filter(v => v.trim());
+  const operai = Array.from(document.querySelectorAll('#operai-list input')).map(i => i.value).filter(v => v.trim());
   const mezziSel = MEZZI.filter(m => sel[m.id]).map(m => {
     const qty = parseInt(document.querySelector(`.mc[data-id="${m.id}"] input`)?.value) || 1;
     return { id: m.id, nome: m.name, qty };
@@ -729,7 +756,7 @@ function collectData() {
     turno:    turno === 'D' ? 'Diurno' : 'Notturno',
     settimana: document.getElementById('settimana').value,
     anno: p.anno, mese: p.meseName, meseFull: p.meseFull, giorno: p.giorno,
-    mdo, mepc, mezziSel, targhe, att,
+    mdo, mepc, operai, mezziSel, targhe, att,
     int_d: { bin: document.getElementById('id_bin').value, usc: document.getElementById('id_usc').value, rie: document.getElementById('id_rie').value, fir: document.getElementById('id_fir').value },
     int_n: { bin: document.getElementById('in_bin').value, usc: document.getElementById('in_usc').value, rie: document.getElementById('in_rie').value, fir: document.getElementById('in_fir').value },
     path: { root: '1 - RAPPORTINI', anno: p.anno, mese: p.meseName, giorno: p.giorno, codice: p.cod },
@@ -843,7 +870,24 @@ async function driveCreateFolder(token, name, parentId) {
   return f.id;
 }
 
-async function driveUploadFile(token, name, content, mimeType, parentId) {
+async function driveUploadFileB64(token, name, b64content, mimeType, parentId) {
+  // Send base64 encoded binary to Apps Script which decodes and saves it
+  const payload = JSON.stringify({
+    folderId: parentId,
+    fileName: name,
+    content: b64content,
+    mimeType,
+    isBase64: true
+  });
+  await fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: payload,
+    mode: 'no-cors',
+  });
+  await new Promise(r => setTimeout(r, 2000));
+  return { success: true, fileName: name };
+}
   const payload = JSON.stringify({ folderId: parentId, fileName: name, content, mimeType });
   // no-cors bypasses CORS entirely — we can't read the response but the request goes through
   await fetch(APPS_SCRIPT_URL, {
@@ -882,15 +926,18 @@ async function doSave() {
     step = 'Preparazione file';
     const safeName   = `${d.codice}_${d.anno}-${d.mese}-${d.giorno}_${d.turno}`;
     const txtContent = buildDocContent(d);
-    const csvContent = buildCSV(d);
+
+    step = 'Generazione Excel';
+    showToast(step + '…', 'warn');
+    const xlsxB64 = await buildXLSX(d);
 
     step = 'Caricamento file TXT';
     showToast(step + '…', 'warn');
     await driveUploadFile(token, `Rapportino_${safeName}.txt`, txtContent, 'text/plain', codId);
 
-    step = 'Caricamento file CSV';
+    step = 'Caricamento file Excel';
     showToast(step + '…', 'warn');
-    await driveUploadFile(token, `Rapportino_${safeName}.csv`, csvContent, 'text/csv', codId);
+    await driveUploadFileB64(token, `Rapportino_${safeName}.xlsx`, xlsxB64, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', codId);
 
     setBtnLoading(false);
     showToast('✓ Rapportino salvato su Google Drive!', 'ok');
@@ -917,8 +964,9 @@ function buildDocContent(d) {
     `Preposto alla sicurezza : ${d.preposto || '—'}`,
     `Numero operai in turno  : ${d.n_operai || '—'}`,
   ];
-  if (d.mdo.length)  lines.push(`MI-MDO  : ${d.mdo.join(', ')}`);
-  if (d.mepc.length) lines.push(`MI-MEPC : ${d.mepc.join(', ')}`);
+  if (d.mdo.length)    lines.push(`MI-MDO  : ${d.mdo.join(', ')}`);
+  if (d.mepc.length)   lines.push(`MI-MEPC : ${d.mepc.join(', ')}`);
+  if (d.operai.length) lines.push(`Operai  : ${d.operai.join(', ')}`);
   lines.push('', s, 'MEZZI UTILIZZATI', s);
   if (d.mezziSel.length) {
     d.mezziSel.forEach(m => lines.push(`  ${m.nome.padEnd(14)}: ${m.qty} unità`));
@@ -937,28 +985,111 @@ function buildDocContent(d) {
   lines.push('', S, `Generato il ${d.generato}`, S);
   return lines.join('\n');
 }
-function buildCSV(d) {
-  const rows = [
-    ['HI.TEC. / Italia s.r.l. — Rapportino Giornaliero di Lavoro'], [],
-    ['Cantiere', d.cantiere, 'Codice', d.codice],
-    ['Appaltatore', d.appaltatore],
-    ['Data', d.giorno, 'Mese', d.mese, 'Anno', d.anno, 'Settimana', d.settimana],
-    ['Turno', d.turno], [],
-    ['PERSONALE'], ['Preposto', d.preposto, 'Operai', d.n_operai],
+async function buildXLSX(d) {
+  // Load SheetJS from CDN
+  if (!window.XLSX) {
+    await new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+      s.onload = resolve; s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+  const XL = window.XLSX;
+  const wb = XL.utils.book_new();
+
+  // ── FOGLIO 1: RAPPORTINO (formattato, leggibile) ──
+  const s1data = [];
+  const push = (...cells) => s1data.push(cells);
+
+  push(['HI.TEC. / Italia s.r.l. — Rapportino Giornaliero di Lavoro']);
+  push([]);
+  push(['CANTIERE', d.cantiere || '—', '', 'CODICE', d.codice || '—']);
+  push(['APPALTATORE', d.appaltatore || '—']);
+  push(['DATA', d.giorno || '—', 'MESE', d.mese || '—', 'ANNO', d.anno || '—', 'SETTIMANA', d.settimana || '—']);
+  push(['TURNO', d.turno]);
+  push([]);
+  push(['── PERSONALE ──']);
+  push(['Preposto alla sicurezza', d.preposto || '—', '', 'Operai in turno', d.n_operai || '—']);
+  if (d.mdo.length)    push(['MI-MDO',   d.mdo.join(', ')]);
+  if (d.mepc.length)   push(['MI-MEPC',  d.mepc.join(', ')]);
+  if (d.operai.length) push(['Operai',   d.operai.join(', ')]);
+  push([]);
+  push(['── MEZZI UTILIZZATI ──']);
+  push(['Mezzo', 'Quantità', 'Targa', 'Modello']);
+  d.mezziSel.forEach(m => {
+    const targhe = d.targhe.filter(t => t.mezzo === m.id);
+    if (targhe.length) {
+      targhe.forEach((t, i) => push(i === 0 ? m.nome : '', i === 0 ? m.qty : '', t.targa, t.modello));
+    } else {
+      push(m.nome, m.qty, '—', '—');
+    }
+  });
+  if (!d.mezziSel.length) push(['Nessun mezzo selezionato']);
+  push([]);
+  push(['── ATTIVITÀ SVOLTE ──']);
+  push(['N°', 'Tipologia attività', 'Quantità', 'Ai Picc. N°']);
+  if (d.att.length) d.att.forEach(a => push(a.n, a.tipo, a.qty || '—', a.picc || '—'));
+  else push(['', 'Nessuna attività inserita']);
+  push([]);
+  push(['── INTERRUZIONI ──']);
+  push(['Tipo', 'Binario', 'Uscita', 'Rientro', 'Firma']);
+  push(['Diurna',   d.int_d.bin || '—', d.int_d.usc || '—', d.int_d.rie || '—', d.int_d.fir || '—']);
+  push(['Notturna', d.int_n.bin || '—', d.int_n.usc || '—', d.int_n.rie || '—', d.int_n.fir || '—']);
+  push([]);
+  push(['Generato il', d.generato]);
+
+  const ws1 = XL.utils.aoa_to_sheet(s1data);
+  // Larghezze colonne foglio 1
+  ws1['!cols'] = [{wch:28},{wch:30},{wch:4},{wch:18},{wch:22},{wch:8},{wch:12},{wch:12}];
+  XL.utils.book_append_sheet(wb, ws1, 'Rapportino');
+
+  // ── FOGLIO 2: DATABASE (flat, filtrabile) ──
+  // Una riga per ogni attività svolta — ideale per report mensili
+  const headers = [
+    'Data','Giorno','Mese','Anno','Settimana','Turno',
+    'Cantiere','Codice cantiere','Appaltatore',
+    'Preposto','N° Operai','Nomi Operai',
+    'Personale MDO','Personale MEPC',
+    'N° Attività','Tipologia attività','Quantità attività','Ai Picc. N°',
+    'Mezzi (riepilogo)','Targhe (riepilogo)',
+    'Int. Diurna - Binario','Int. Diurna - Uscita','Int. Diurna - Rientro','Int. Diurna - Firma',
+    'Int. Notturna - Binario','Int. Notturna - Uscita','Int. Notturna - Rientro','Int. Notturna - Firma',
+    'File generato'
   ];
-  if (d.mdo.length)  rows.push(['MI-MDO',  ...d.mdo]);
-  if (d.mepc.length) rows.push(['MI-MEPC', ...d.mepc]);
-  rows.push([], ['MEZZI UTILIZZATI'], ['Mezzo', 'Quantità']);
-  d.mezziSel.forEach(m => rows.push([m.nome, m.qty]));
-  rows.push([], ['TARGHE E MODELLI'], ['Mezzo', 'Targa', 'Modello']);
-  d.targhe.forEach(t => rows.push([t.nome, t.targa, t.modello]));
-  rows.push([], ['ATTIVITÀ SVOLTE'], ['N°', 'Tipologia', 'Quantità', 'Ai Picc. N°']);
-  d.att.forEach(a => rows.push([a.n, a.tipo, a.qty, a.picc]));
-  rows.push([], ['INTERRUZIONI'], ['Tipo', 'Binario', 'Uscita', 'Rientro', 'Firma']);
-  rows.push(['Diurna', d.int_d.bin, d.int_d.usc, d.int_d.rie, d.int_d.fir]);
-  rows.push(['Notturna', d.int_n.bin, d.int_n.usc, d.int_n.rie, d.int_n.fir]);
-  rows.push([], ['Generato il', d.generato]);
-  return rows.map(r => r.map(c => `"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\r\n');
+
+  const mezziRiepilogo = d.mezziSel.map(m => `${m.nome} x${m.qty}`).join(', ') || '—';
+  const targheRiepilogo = d.targhe.map(t => `${t.nome}: ${t.targa} (${t.modello})`).join('; ') || '—';
+  const mdomStr  = d.mdo.join('; ')    || '—';
+  const mepcStr  = d.mepc.join('; ')   || '—';
+  const operaiStr = d.operai.join('; ') || '—';
+
+  const dbRows = [headers];
+  const attivita = d.att.length ? d.att : [{ n: '', tipo: '—', qty: '', picc: '' }];
+  attivita.forEach(a => {
+    dbRows.push([
+      d.giorno, document.querySelector('.day-pill.on')?.textContent || '—',
+      d.mese, d.anno, d.settimana || '—', d.turno,
+      d.cantiere || '—', d.codice || '—', d.appaltatore || '—',
+      d.preposto || '—', d.n_operai || '—', operaiStr,
+      mdomStr, mepcStr,
+      a.n || '—', a.tipo || '—', a.qty || '—', a.picc || '—',
+      mezziRiepilogo, targheRiepilogo,
+      d.int_d.bin || '—', d.int_d.usc || '—', d.int_d.rie || '—', d.int_d.fir || '—',
+      d.int_n.bin || '—', d.int_n.usc || '—', d.int_n.rie || '—', d.int_n.fir || '—',
+      d.generato
+    ]);
+  });
+
+  const ws2 = XL.utils.aoa_to_sheet(dbRows);
+  ws2['!cols'] = headers.map(h => ({ wch: Math.max(h.length + 2, 14) }));
+  // Autofilter sulla riga header
+  ws2['!autofilter'] = { ref: `A1:AB${dbRows.length}` };
+  XL.utils.book_append_sheet(wb, ws2, 'Database');
+
+  // Genera file come base64
+  const xlsxB64 = XL.write(wb, { bookType: 'xlsx', type: 'base64' });
+  return xlsxB64;
 }
 
 /* ══════════════════════════════════════════════
