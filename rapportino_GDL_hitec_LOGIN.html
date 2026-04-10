@@ -459,30 +459,16 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
     </div>
   </div>
 
-  <!-- SEZ 05 -->
+  <!-- SEZ 06 -->
   <div class="sec">
     <div class="sec-hdr" onclick="toggleSec(this)">
-      <span class="sec-num">05</span><span class="sec-title">Interruzioni</span>
-      <span class="sec-ok" id="ok5"></span><span class="sec-chev">▾</span>
+      <span class="sec-num">06</span><span class="sec-title">Note e osservazioni</span>
+      <span class="sec-ok" id="ok6"></span><span class="sec-chev">▾</span>
     </div>
     <div class="sec-body">
-      <div class="int-block">
-        <div class="int-badge int-d">INTERRUZIONE DIURNA</div>
-        <div class="grid g2">
-          <div class="field"><span class="lbl">Binario</span><input type="text" id="id_bin" placeholder="es. 1 UP"></div>
-          <div class="field"><span class="lbl">Firma</span><input type="text" id="id_fir" placeholder="Iniziali"></div>
-          <div class="field"><span class="lbl">Uscita ore</span><input type="time" id="id_usc"></div>
-          <div class="field"><span class="lbl">Rientro ore</span><input type="time" id="id_rie"></div>
-        </div>
-      </div>
-      <div class="int-block">
-        <div class="int-badge int-n">INTERRUZIONE NOTTURNA</div>
-        <div class="grid g2">
-          <div class="field"><span class="lbl">Binario</span><input type="text" id="in_bin" placeholder="es. 2 DOWN"></div>
-          <div class="field"><span class="lbl">Firma</span><input type="text" id="in_fir" placeholder="Iniziali"></div>
-          <div class="field"><span class="lbl">Uscita ore</span><input type="time" id="in_usc"></div>
-          <div class="field"><span class="lbl">Rientro ore</span><input type="time" id="in_rie"></div>
-        </div>
+      <div class="field">
+        <span class="lbl">Note libere</span>
+        <textarea id="note" placeholder="Inserisci eventuali note, problemi riscontrati, osservazioni sul cantiere..." style="min-height:100px;resize:vertical;font-family:'IBM Plex Sans',sans-serif;font-size:14px;line-height:1.6;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;width:100%;background:var(--surface);outline:none;transition:border-color .15s" onfocus="this.style.borderColor='var(--accent2)';this.style.background='#fff'" onblur="this.style.borderColor='var(--border)'"></textarea>
       </div>
     </div>
   </div>
@@ -759,6 +745,7 @@ function collectData() {
     mdo, mepc, operai, mezziSel, targhe, att,
     int_d: { bin: document.getElementById('id_bin').value, usc: document.getElementById('id_usc').value, rie: document.getElementById('id_rie').value, fir: document.getElementById('id_fir').value },
     int_n: { bin: document.getElementById('in_bin').value, usc: document.getElementById('in_usc').value, rie: document.getElementById('in_rie').value, fir: document.getElementById('in_fir').value },
+    note: document.getElementById('note').value || '',
     path: { root: '1 - RAPPORTINI', anno: p.anno, mese: p.meseName, giorno: p.giorno, codice: p.cod },
     generato: new Date().toLocaleString('it-IT'),
   };
@@ -983,10 +970,10 @@ function buildDocContent(d) {
     if (d.int_n.bin || d.int_n.usc) lines.push(`  Notturna — Binario: ${d.int_n.bin||'—'} | Uscita: ${d.int_n.usc||'—'} | Rientro: ${d.int_n.rie||'—'} | Firma: ${d.int_n.fir||'—'}`);
   }
   lines.push('', S, `Generato il ${d.generato}`, S);
+  if (d.note) lines.push('', 'NOTE', s, d.note);
   return lines.join('\n');
 }
 async function buildXLSX(d) {
-  // Load SheetJS from CDN
   if (!window.XLSX) {
     await new Promise((resolve, reject) => {
       const s = document.createElement('script');
@@ -996,100 +983,70 @@ async function buildXLSX(d) {
     });
   }
   const XL = window.XLSX;
+
+  function toSheet(rows) {
+    const ws = {};
+    let maxC = 0;
+    rows.forEach((row, r) => {
+      if (row.length > maxC) maxC = row.length;
+      row.forEach((val, c) => {
+        ws[XL.utils.encode_cell({r,c})] = { t:'s', v: val===null||val===undefined ? '' : String(val) };
+      });
+    });
+    ws['!ref'] = XL.utils.encode_range({s:{r:0,c:0}, e:{r:Math.max(rows.length-1,0), c:Math.max(maxC-1,0)}});
+    return ws;
+  }
+
   const wb = XL.utils.book_new();
+  const operaiList = d.operai || [];
+  const gg = document.querySelector('.day-pill.on')?.textContent || '';
 
-  // ── FOGLIO 1: RAPPORTINO (formattato, leggibile) ──
-  const s1data = [];
-  const push = (...cells) => s1data.push(cells);
-
-  push(['HI.TEC. / Italia s.r.l. — Rapportino Giornaliero di Lavoro']);
-  push([]);
-  push(['CANTIERE', d.cantiere || '—', '', 'CODICE', d.codice || '—']);
-  push(['APPALTATORE', d.appaltatore || '—']);
-  push(['DATA', d.giorno || '—', 'MESE', d.mese || '—', 'ANNO', d.anno || '—', 'SETTIMANA', d.settimana || '—']);
-  push(['TURNO', d.turno]);
-  push([]);
-  push(['── PERSONALE ──']);
-  push(['Preposto alla sicurezza', d.preposto || '—', '', 'Operai in turno', d.n_operai || '—']);
-  if (d.mdo.length)    push(['MI-MDO',   d.mdo.join(', ')]);
-  if (d.mepc.length)   push(['MI-MEPC',  d.mepc.join(', ')]);
-  if (d.operai.length) push(['Operai',   d.operai.join(', ')]);
-  push([]);
-  push(['── MEZZI UTILIZZATI ──']);
-  push(['Mezzo', 'Quantità', 'Targa', 'Modello']);
-  d.mezziSel.forEach(m => {
-    const targhe = d.targhe.filter(t => t.mezzo === m.id);
-    if (targhe.length) {
-      targhe.forEach((t, i) => push(i === 0 ? m.nome : '', i === 0 ? m.qty : '', t.targa, t.modello));
-    } else {
-      push(m.nome, m.qty, '—', '—');
-    }
-  });
-  if (!d.mezziSel.length) push(['Nessun mezzo selezionato']);
-  push([]);
-  push(['── ATTIVITÀ SVOLTE ──']);
-  push(['N°', 'Tipologia attività', 'Quantità', 'Ai Picc. N°']);
-  if (d.att.length) d.att.forEach(a => push(a.n, a.tipo, a.qty || '—', a.picc || '—'));
-  else push(['', 'Nessuna attività inserita']);
-  push([]);
-  push(['── INTERRUZIONI ──']);
-  push(['Tipo', 'Binario', 'Uscita', 'Rientro', 'Firma']);
-  push(['Diurna',   d.int_d.bin || '—', d.int_d.usc || '—', d.int_d.rie || '—', d.int_d.fir || '—']);
-  push(['Notturna', d.int_n.bin || '—', d.int_n.usc || '—', d.int_n.rie || '—', d.int_n.fir || '—']);
-  push([]);
-  push(['Generato il', d.generato]);
-
-  const ws1 = XL.utils.aoa_to_sheet(s1data);
-  // Larghezze colonne foglio 1
-  ws1['!cols'] = [{wch:28},{wch:30},{wch:4},{wch:18},{wch:22},{wch:8},{wch:12},{wch:12}];
-  XL.utils.book_append_sheet(wb, ws1, 'Rapportino');
-
-  // ── FOGLIO 2: DATABASE (flat, filtrabile) ──
-  // Una riga per ogni attività svolta — ideale per report mensili
-  const headers = [
-    'Data','Giorno','Mese','Anno','Settimana','Turno',
-    'Cantiere','Codice cantiere','Appaltatore',
-    'Preposto','N° Operai','Nomi Operai',
-    'Personale MDO','Personale MEPC',
-    'N° Attività','Tipologia attività','Quantità attività','Ai Picc. N°',
-    'Mezzi (riepilogo)','Targhe (riepilogo)',
-    'Int. Diurna - Binario','Int. Diurna - Uscita','Int. Diurna - Rientro','Int. Diurna - Firma',
-    'Int. Notturna - Binario','Int. Notturna - Uscita','Int. Notturna - Rientro','Int. Notturna - Firma',
-    'File generato'
+  // Colonne — una riga = un rapportino completo
+  const cols = [
+    'Data', 'Giorno', 'Mese', 'Anno', 'Settimana', 'Turno',
+    'Cantiere', 'Codice cantiere', 'Appaltatore',
+    'Preposto sicurezza', 'N. operai', 'Nomi operai',
+    'Personale MDO', 'Personale MEPC',
+    'Carrelli', 'Pianali', 'Carro botte', 'Autoscala', 'Auto', 'Camion', 'Furgoni',
+    'Targhe e modelli',
+    'Att.1 Tipo', 'Att.1 Qtà', 'Att.1 Picc.',
+    'Att.2 Tipo', 'Att.2 Qtà', 'Att.2 Picc.',
+    'Att.3 Tipo', 'Att.3 Qtà', 'Att.3 Picc.',
+    'Att.4 Tipo', 'Att.4 Qtà', 'Att.4 Picc.',
+    'Att.5 Tipo', 'Att.5 Qtà', 'Att.5 Picc.',
+    'Int.D Binario', 'Int.D Uscita', 'Int.D Rientro', 'Int.D Firma',
+    'Int.N Binario', 'Int.N Uscita', 'Int.N Rientro', 'Int.N Firma',
+    'Note', 'Generato il'
   ];
 
-  const mezziRiepilogo = d.mezziSel.map(m => `${m.nome} x${m.qty}`).join(', ') || '—';
-  const targheRiepilogo = d.targhe.map(t => `${t.nome}: ${t.targa} (${t.modello})`).join('; ') || '—';
-  const mdomStr  = d.mdo.join('; ')    || '—';
-  const mepcStr  = d.mepc.join('; ')   || '—';
-  const operaiStr = d.operai.join('; ') || '—';
+  const getMezzo = id => { const m = d.mezziSel.find(m=>m.id===id); return m ? String(m.qty) : ''; };
+  const targheR  = d.targhe.map(t=>`${t.nome}: ${t.targa}${t.modello?' ('+t.modello+')':''}`).join(' | ');
+  const attCols  = [];
+  for (let i = 0; i < 5; i++) {
+    const a = d.att[i];
+    attCols.push(a?.tipo||'', a?.qty||'', a?.picc||'');
+  }
 
-  const dbRows = [headers];
-  const attivita = d.att.length ? d.att : [{ n: '', tipo: '—', qty: '', picc: '' }];
-  attivita.forEach(a => {
-    dbRows.push([
-      d.giorno, document.querySelector('.day-pill.on')?.textContent || '—',
-      d.mese, d.anno, d.settimana || '—', d.turno,
-      d.cantiere || '—', d.codice || '—', d.appaltatore || '—',
-      d.preposto || '—', d.n_operai || '—', operaiStr,
-      mdomStr, mepcStr,
-      a.n || '—', a.tipo || '—', a.qty || '—', a.picc || '—',
-      mezziRiepilogo, targheRiepilogo,
-      d.int_d.bin || '—', d.int_d.usc || '—', d.int_d.rie || '—', d.int_d.fir || '—',
-      d.int_n.bin || '—', d.int_n.usc || '—', d.int_n.rie || '—', d.int_n.fir || '—',
-      d.generato
-    ]);
-  });
+  const row = [
+    d.giorno||'', gg, d.mese||'', String(d.anno||''), String(d.settimana||''), d.turno||'',
+    d.cantiere||'', d.codice||'', d.appaltatore||'',
+    d.preposto||'', String(d.n_operai||''), operaiList.join(', '),
+    d.mdo.join(', '), d.mepc.join(', '),
+    getMezzo('carrelli'), getMezzo('pianali'), getMezzo('carro'),
+    getMezzo('autoscala'), getMezzo('auto'), getMezzo('camion'), getMezzo('furgoni'),
+    targheR,
+    ...attCols,
+    d.int_d.bin||'', d.int_d.usc||'', d.int_d.rie||'', d.int_d.fir||'',
+    d.int_n.bin||'', d.int_n.usc||'', d.int_n.rie||'', d.int_n.fir||'',
+    d.note||'', d.generato||''
+  ];
 
-  const ws2 = XL.utils.aoa_to_sheet(dbRows);
-  ws2['!cols'] = headers.map(h => ({ wch: Math.max(h.length + 2, 14) }));
-  // Autofilter sulla riga header
-  ws2['!autofilter'] = { ref: `A1:AB${dbRows.length}` };
-  XL.utils.book_append_sheet(wb, ws2, 'Database');
+  const ws = toSheet([cols, row]);
+  ws['!cols'] = cols.map(h => ({ wch: Math.max(h.length + 2, 12) }));
+  ws['!autofilter'] = { ref: `A1:${XL.utils.encode_col(cols.length-1)}1` };
+  XL.utils.book_append_sheet(wb, ws, 'Rapportino');
 
-  // Genera file come base64
-  const xlsxB64 = XL.write(wb, { bookType: 'xlsx', type: 'base64' });
-  return xlsxB64;
+  return XL.write(wb, { bookType:'xlsx', type:'base64' });
 }
 
 /* ══════════════════════════════════════════════
@@ -1149,6 +1106,7 @@ function showToast(msg, type) {
 function resetForm() {
   if (!confirm('Resettare il modulo per un nuovo rapportino?')) return;
   document.querySelectorAll('input[type=text], input[type=time]').forEach(i => i.value = '');
+  document.getElementById('note').value = '';
   document.getElementById('att-list').innerHTML = ''; attN = 0;
   for (let i = 0; i < 5; i++) addAtt();
   Object.keys(sel).forEach(k => delete sel[k]);
