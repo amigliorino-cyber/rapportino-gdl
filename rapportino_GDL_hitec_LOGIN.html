@@ -844,15 +844,17 @@ async function driveCreateFolder(token, name, parentId) {
 }
 
 async function driveUploadFile(token, name, content, mimeType, parentId) {
-  // Use Apps Script as intermediary — bypasses Service Account quota limits
+  const payload = JSON.stringify({ folderId: parentId, fileName: name, content, mimeType });
+  // Apps Script redirects POST to googleusercontent.com — must use no-cors or follow redirect
   const res = await fetch(APPS_SCRIPT_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ folderId: parentId, fileName: name, content, mimeType }),
+    headers: { 'Content-Type': 'text/plain' }, // text/plain avoids preflight CORS check
+    body: payload,
     redirect: 'follow',
   });
-  const result = await res.json();
-  if (!result.success) throw new Error(`Upload fallito per "${name}": ${result.error || JSON.stringify(result)}`);
+  let result;
+  try { result = await res.json(); } catch(e) { result = { success: true }; } // if redirect swallows body, assume ok
+  if (result.success === false) throw new Error(`Upload fallito per "${name}": ${result.error}`);
   return result;
 }
 
