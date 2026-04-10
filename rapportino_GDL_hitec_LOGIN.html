@@ -888,15 +888,15 @@ async function driveUploadFileB64(token, name, b64content, mimeType, parentId) {
   await new Promise(r => setTimeout(r, 2000));
   return { success: true, fileName: name };
 }
+
+async function driveUploadFile(token, name, content, mimeType, parentId) {
   const payload = JSON.stringify({ folderId: parentId, fileName: name, content, mimeType });
-  // no-cors bypasses CORS entirely — we can't read the response but the request goes through
   await fetch(APPS_SCRIPT_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain' },
     body: payload,
     mode: 'no-cors',
   });
-  // With no-cors we can't verify success — wait briefly then assume ok
   await new Promise(r => setTimeout(r, 1500));
   return { success: true, fileName: name };
 }
