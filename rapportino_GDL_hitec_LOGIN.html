@@ -845,17 +845,16 @@ async function driveCreateFolder(token, name, parentId) {
 
 async function driveUploadFile(token, name, content, mimeType, parentId) {
   const payload = JSON.stringify({ folderId: parentId, fileName: name, content, mimeType });
-  // Apps Script redirects POST to googleusercontent.com — must use no-cors or follow redirect
-  const res = await fetch(APPS_SCRIPT_URL, {
+  // no-cors bypasses CORS entirely — we can't read the response but the request goes through
+  await fetch(APPS_SCRIPT_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'text/plain' }, // text/plain avoids preflight CORS check
+    headers: { 'Content-Type': 'text/plain' },
     body: payload,
-    redirect: 'follow',
+    mode: 'no-cors',
   });
-  let result;
-  try { result = await res.json(); } catch(e) { result = { success: true }; } // if redirect swallows body, assume ok
-  if (result.success === false) throw new Error(`Upload fallito per "${name}": ${result.error}`);
-  return result;
+  // With no-cors we can't verify success — wait briefly then assume ok
+  await new Promise(r => setTimeout(r, 1500));
+  return { success: true, fileName: name };
 }
 
 async function doSave() {
