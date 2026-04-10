@@ -842,35 +842,31 @@ async function driveCreateFolder(token, name, parentId) {
 }
 
 async function driveUploadFile(token, name, content, mimeType, parentId) {
-  // Step 1: initiate resumable upload session
-  const initRes = await fetch(
-    `https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true&fields=id,name`,
+  // Use multipart upload with proper boundary — works for shared folders
+  const boundary = '-------314159265358979323846';
+  const delimiter = `\r\n--${boundary}\r\n`;
+  const closeDelim = `\r\n--${boundary}--`;
+  const metadata = JSON.stringify({ name, mimeType, parents: [parentId] });
+  const body =
+    delimiter +
+    'Content-Type: application/json\r\n\r\n' + metadata +
+    delimiter +
+    `Content-Type: ${mimeType}\r\n\r\n` + content +
+    closeDelim;
+
+  const res = await fetch(
+    `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true&fields=id,name`,
     {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'X-Upload-Content-Type': mimeType,
-        'X-Upload-Content-Length': new Blob([content]).size,
+        'Content-Type': `multipart/related; boundary="${boundary}"`,
       },
-      body: JSON.stringify({ name, mimeType, parents: [parentId] }),
+      body,
     }
   );
-  if (!initRes.ok) {
-    const e = await initRes.json();
-    throw new Error(`Inizializzazione upload fallita: ${JSON.stringify(e)}`);
-  }
-  const uploadUrl = initRes.headers.get('Location');
-  if (!uploadUrl) throw new Error('URL di upload non ricevuto da Google');
-
-  // Step 2: upload actual content to the session URL
-  const uploadRes = await fetch(uploadUrl, {
-    method: 'PUT',
-    headers: { 'Content-Type': mimeType },
-    body: content,
-  });
-  const result = await uploadRes.json();
-  if (!result.id) throw new Error(`Upload contenuto fallito: ${JSON.stringify(result)}`);
+  const result = await res.json();
+  if (!result.id) throw new Error(`Upload fallito per "${name}": ${JSON.stringify(result)}`);
   return result;
 }
 
