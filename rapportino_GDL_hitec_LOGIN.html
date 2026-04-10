@@ -1055,10 +1055,17 @@ async function loadUsers(token) {
   const list = await res.json();
   if (list.files && list.files.length > 0) {
     usersFileId = list.files[0].id;
-    const content = await fetch(`https://www.googleapis.com/drive/v3/files/${usersFileId}?alt=media&supportsAllDrives=true`, {
-      headers: { Authorization: `Bearer ${token}` }
+    // Use export/download with alt=media and follow redirects properly
+    const dlRes = await fetch(`https://www.googleapis.com/drive/v3/files/${usersFileId}?alt=media&supportsAllDrives=true`, {
+      headers: { Authorization: `Bearer ${token}`, 'Accept': 'application/json' }
     });
-    usersCache = await content.json();
+    if (!dlRes.ok) throw new Error(`Download utenti fallito: ${dlRes.status}`);
+    const text = await dlRes.text();
+    try {
+      usersCache = JSON.parse(text);
+    } catch(e) {
+      throw new Error(`JSON utenti non valido: ${text.slice(0,100)}`);
+    }
   } else {
     const defaultHash = await hashPassword('admin123');
     usersCache = {
@@ -1142,7 +1149,8 @@ async function doLogin() {
     setSession(user);
     showApp(user);
   } catch(e) {
-    errEl.textContent = 'Errore di connessione. Verifica la rete e riprova.';
+    console.error('Errore login dettagliato:', e);
+    errEl.textContent = 'Errore: ' + (e.message || 'sconosciuto');
     errEl.classList.add('show');
     btn.disabled = false; btn.textContent = 'Entra';
   }
