@@ -459,6 +459,34 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
     </div>
   </div>
 
+  <!-- SEZ 05 -->
+  <div class="sec">
+    <div class="sec-hdr" onclick="toggleSec(this)">
+      <span class="sec-num">05</span><span class="sec-title">Interruzioni</span>
+      <span class="sec-ok" id="ok5"></span><span class="sec-chev">▾</span>
+    </div>
+    <div class="sec-body">
+      <div class="int-block">
+        <div class="int-badge int-d">INTERRUZIONE DIURNA</div>
+        <div class="grid g2">
+          <div class="field"><span class="lbl">Binario</span><input type="text" id="id_bin" placeholder="es. 1 UP"></div>
+          <div class="field"><span class="lbl">Firma</span><input type="text" id="id_fir" placeholder="Iniziali"></div>
+          <div class="field"><span class="lbl">Uscita ore</span><input type="time" id="id_usc"></div>
+          <div class="field"><span class="lbl">Rientro ore</span><input type="time" id="id_rie"></div>
+        </div>
+      </div>
+      <div class="int-block">
+        <div class="int-badge int-n">INTERRUZIONE NOTTURNA</div>
+        <div class="grid g2">
+          <div class="field"><span class="lbl">Binario</span><input type="text" id="in_bin" placeholder="es. 2 DOWN"></div>
+          <div class="field"><span class="lbl">Firma</span><input type="text" id="in_fir" placeholder="Iniziali"></div>
+          <div class="field"><span class="lbl">Uscita ore</span><input type="time" id="in_usc"></div>
+          <div class="field"><span class="lbl">Rientro ore</span><input type="time" id="in_rie"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- SEZ 06 -->
   <div class="sec">
     <div class="sec-hdr" onclick="toggleSec(this)">
@@ -743,9 +771,9 @@ function collectData() {
     settimana: document.getElementById('settimana').value,
     anno: p.anno, mese: p.meseName, meseFull: p.meseFull, giorno: p.giorno,
     mdo, mepc, operai, mezziSel, targhe, att,
-    int_d: { bin: document.getElementById('id_bin').value, usc: document.getElementById('id_usc').value, rie: document.getElementById('id_rie').value, fir: document.getElementById('id_fir').value },
-    int_n: { bin: document.getElementById('in_bin').value, usc: document.getElementById('in_usc').value, rie: document.getElementById('in_rie').value, fir: document.getElementById('in_fir').value },
-    note: document.getElementById('note').value || '',
+    int_d: { bin: document.getElementById('id_bin')?.value||'', usc: document.getElementById('id_usc')?.value||'', rie: document.getElementById('id_rie')?.value||'', fir: document.getElementById('id_fir')?.value||'' },
+    int_n: { bin: document.getElementById('in_bin')?.value||'', usc: document.getElementById('in_usc')?.value||'', rie: document.getElementById('in_rie')?.value||'', fir: document.getElementById('in_fir')?.value||'' },
+    note: document.getElementById('note')?.value || '',
     path: { root: '1 - RAPPORTINI', anno: p.anno, mese: p.meseName, giorno: p.giorno, codice: p.cod },
     generato: new Date().toLocaleString('it-IT'),
   };
