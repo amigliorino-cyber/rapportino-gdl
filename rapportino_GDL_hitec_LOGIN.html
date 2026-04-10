@@ -842,18 +842,35 @@ async function driveCreateFolder(token, name, parentId) {
 }
 
 async function driveUploadFile(token, name, content, mimeType, parentId) {
-  const blob = new Blob([content], { type: mimeType });
-  const meta = { name, mimeType, parents: [parentId] };
-  const form = new FormData();
-  form.append('metadata', new Blob([JSON.stringify(meta)], { type: 'application/json' }));
-  form.append('file', blob);
-  const res = await fetch(`https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true&fields=id,name`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}` },
-    body: form,
+  // Step 1: initiate resumable upload session
+  const initRes = await fetch(
+    `https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true&fields=id,name`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'X-Upload-Content-Type': mimeType,
+        'X-Upload-Content-Length': new Blob([content]).size,
+      },
+      body: JSON.stringify({ name, mimeType, parents: [parentId] }),
+    }
+  );
+  if (!initRes.ok) {
+    const e = await initRes.json();
+    throw new Error(`Inizializzazione upload fallita: ${JSON.stringify(e)}`);
+  }
+  const uploadUrl = initRes.headers.get('Location');
+  if (!uploadUrl) throw new Error('URL di upload non ricevuto da Google');
+
+  // Step 2: upload actual content to the session URL
+  const uploadRes = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': mimeType },
+    body: content,
   });
-  const result = await res.json();
-  if (!result.id) throw new Error(`Upload fallito per "${name}": ${JSON.stringify(result)}`);
+  const result = await uploadRes.json();
+  if (!result.id) throw new Error(`Upload contenuto fallito: ${JSON.stringify(result)}`);
   return result;
 }
 
@@ -1075,31 +1092,47 @@ async function loadUsers(token) {
 async function saveUsersToFile(token) {
   const cfg     = getCfg();
   const content = JSON.stringify(usersCache, null, 2);
-  const blob    = new Blob([content], { type: 'application/json' });
+  const size    = new Blob([content]).size;
 
   if (usersFileId) {
-    // Update existing — use multipart with file ID
-    const form = new FormData();
-    form.append('metadata', new Blob([JSON.stringify({ mimeType: 'application/json' })], { type: 'application/json' }));
-    form.append('file', blob);
-    const res = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${usersFileId}?uploadType=multipart&supportsAllDrives=true`, {
-      method: 'PATCH',
-      headers: { Authorization: `Bearer ${token}` },
-      body: form,
-    });
+    // Update existing via resumable
+    const initRes = await fetch(
+      `https://www.googleapis.com/upload/drive/v3/files/${usersFileId}?uploadType=resumable&supportsAllDrives=true`,
+      {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'X-Upload-Content-Type': 'application/json',
+          'X-Upload-Content-Length': size,
+        },
+        body: JSON.stringify({ mimeType: 'application/json' }),
+      }
+    );
+    if (!initRes.ok) { const e = await initRes.json(); throw new Error(`Init aggiornamento utenti fallito: ${JSON.stringify(e)}`); }
+    const uploadUrl = initRes.headers.get('Location');
+    const res = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: content });
     const r = await res.json();
     if (!r.id) throw new Error(`Salvataggio utenti fallito: ${JSON.stringify(r)}`);
   } else {
-    // Create new — multipart with parent folder
+    // Create new via resumable
     const meta = { name: USERS_FILENAME, mimeType: 'application/json', parents: [cfg.folder] };
-    const form = new FormData();
-    form.append('metadata', new Blob([JSON.stringify(meta)], { type: 'application/json' }));
-    form.append('file', blob);
-    const res = await fetch(`https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true&fields=id`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-      body: form,
-    });
+    const initRes = await fetch(
+      `https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true&fields=id`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'X-Upload-Content-Type': 'application/json',
+          'X-Upload-Content-Length': size,
+        },
+        body: JSON.stringify(meta),
+      }
+    );
+    if (!initRes.ok) { const e = await initRes.json(); throw new Error(`Init creazione utenti fallita: ${JSON.stringify(e)}`); }
+    const uploadUrl = initRes.headers.get('Location');
+    const res = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: content });
     const r = await res.json();
     if (!r.id) throw new Error(`Creazione file utenti fallita: ${JSON.stringify(r)}`);
     usersFileId = r.id;
