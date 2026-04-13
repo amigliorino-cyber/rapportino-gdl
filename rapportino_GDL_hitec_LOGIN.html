@@ -665,6 +665,7 @@ function rebuildTarghe() {
   const wrap = document.getElementById('targhe-wrap');
   const active = MEZZI.filter(m => sel[m.id]);
   if (!active.length) { wrap.innerHTML = '<p style="font-size:12px;color:var(--text3);font-style:italic;padding:4px 0">Nessun mezzo selezionato.</p>'; return; }
+  // Preserva valori targa/modello esistenti
   const prev = {};
   wrap.querySelectorAll('.targa-row').forEach(r => {
     const mid = r.dataset.mezzo, idx = +r.dataset.idx;
@@ -675,14 +676,38 @@ function rebuildTarghe() {
   active.forEach(m => {
     const qty = parseInt(document.querySelector(`.mc[data-id="${m.id}"] input`)?.value) || 1;
     for (let i = 0; i < qty; i++) {
-      const p = (prev[m.id] || [])[i] || {};
+      const p   = (prev[m.id] || [])[i] || {};
+      const uid = `mezzo_${m.id}_${i}`;
+      const wrapper = document.createElement('div');
+      wrapper.style.cssText = 'margin-bottom:10px;border:1px solid var(--surface2);border-radius:8px;padding:8px;background:var(--surface)';
+
+      // Riga targa
       const row = document.createElement('div');
-      row.className = 'targa-row'; row.dataset.mezzo = m.id; row.dataset.idx = i;
+      row.className = 'targa-row'; row.dataset.mezzo = m.id; row.dataset.idx = i; row.dataset.uid = uid;
       row.innerHTML = `<div class="t-label">${m.icon} ${m.name}${qty > 1 ? ' #'+(i+1) : ''}</div>
         <input type="text" placeholder="Targa (es. MI 123AB)" data-f="t" value="${p.t||''}">
         <input type="text" placeholder="Modello (es. Iveco Daily)" data-f="mod" value="${p.mod||''}">
-        <button class="del-btn" onclick="this.closest('.targa-row').remove()" style="width:46px;height:46px">×</button>`;
-      wrap.appendChild(row);
+        <button class="del-btn" onclick="this.closest('[data-mezzo-wrap]').remove()" style="width:46px;height:46px">×</button>`;
+
+      // Sezione foto mezzo (2 slot)
+      const fotoDiv = document.createElement('div');
+      fotoDiv.className = 'foto-section';
+      fotoDiv.style.marginTop = '8px';
+      fotoDiv.innerHTML = `<span class="foto-label" style="font-size:10px">📷 Foto mezzo (max 2)</span>
+        <div class="foto-row">
+          ${[1,2].map(n => `
+          <div class="foto-slot" id="${uid}_f${n}">
+            <span class="foto-icon">+</span>
+            <input type="file" accept="image/*" capture="environment"
+              onchange="handleFoto(this,'${uid}_f${n}')" title="Scatta o carica foto">
+            <button class="foto-del" onclick="delFoto(event,'${uid}_f${n}')">×</button>
+          </div>`).join('')}
+        </div>`;
+
+      wrapper.setAttribute('data-mezzo-wrap', '');
+      wrapper.appendChild(row);
+      wrapper.appendChild(fotoDiv);
+      wrap.appendChild(wrapper);
     }
   });
 }
@@ -849,6 +874,8 @@ function collectData() {
   const targhe = Array.from(document.querySelectorAll('#targhe-wrap .targa-row')).map(r => ({
     mezzo: r.dataset.mezzo, nome: MEZZI.find(m => m.id === r.dataset.mezzo)?.name || '',
     targa: r.querySelector('[data-f=t]')?.value || '', modello: r.querySelector('[data-f=mod]')?.value || '',
+    uid: r.dataset.uid || '',
+    fotoNomi: getFotoForCard(r.dataset.uid || '').map(f => f.name),
   }));
   const att = Array.from(document.querySelectorAll('#att-list .att-card')).map((c, i) => {
     const inp  = c.querySelectorAll('input[type=text], input[type=number]');
@@ -1164,7 +1191,7 @@ async function buildXLSX(d) {
   ];
 
   const getMezzo = id => { const m = d.mezziSel.find(m=>m.id===id); return m ? String(m.qty) : ''; };
-  const targheR  = d.targhe.map(t=>`${t.nome}: ${t.targa}${t.modello?' ('+t.modello+')':''}`).join(' | ');
+  const targheR  = d.targhe.map(t=>`${t.nome}: ${t.targa}${t.modello?' ('+t.modello+')':''}${t.fotoNomi?.length?' ['+t.fotoNomi.join(',')+']':''}`).join(' | ');
   const attCols = [];
   for (let i = 0; i < 5; i++) {
     const a = d.att[i];
