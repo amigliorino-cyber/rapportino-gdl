@@ -181,7 +181,24 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 .status-badge.warn{background:var(--warn-bg);color:var(--warn)}
 .status-dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0}
 
-/* TOAST */
+/* FOTO ATTIVITÀ */
+.foto-section{margin-top:10px;padding-top:10px;border-top:1px solid var(--surface2)}
+.foto-label{font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;font-family:'IBM Plex Mono',monospace;display:block;margin-bottom:8px}
+.foto-row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start}
+.foto-slot{width:80px;height:80px;border:1.5px dashed var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;background:var(--surface);touch-action:manipulation;flex-shrink:0;transition:all .15s}
+.foto-slot:active{border-color:var(--accent2);background:#f0f6fb}
+.foto-slot.has-foto{border-style:solid;border-color:var(--accent2)}
+.foto-slot img{width:100%;height:100%;object-fit:cover;border-radius:6px}
+.foto-slot .foto-icon{font-size:24px;color:var(--text3)}
+.foto-slot .foto-del{position:absolute;top:3px;right:3px;width:20px;height:20px;background:var(--accent);border-radius:50%;border:none;color:#fff;font-size:12px;cursor:pointer;display:none;align-items:center;justify-content:center;line-height:1;font-family:'IBM Plex Sans',sans-serif}
+.foto-slot.has-foto .foto-del{display:flex}
+.foto-slot input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+
+/* ALERT CAMPI */
+.alert-list{background:var(--warn-bg);border:1.5px solid #ffc107;border-radius:9px;padding:.875rem;margin-bottom:1rem}
+.alert-title{font-size:13px;font-weight:600;color:var(--warn);margin-bottom:.5rem}
+.alert-item{font-size:12px;color:var(--warn);padding:2px 0;display:flex;align-items:center;gap:6px}
+.alert-item::before{content:'⚠';font-size:11px}
 .toast{position:fixed;bottom:calc(80px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:300;padding:13px 20px;border-radius:9px;font-size:13px;font-weight:500;max-width:calc(100vw - 2rem);box-shadow:0 4px 24px rgba(0,0,0,.22);display:none;text-align:center;min-width:240px;line-height:1.5;animation:toastIn .3s ease}
 @keyframes toastIn{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translateX(-50%)}}
 .toast.ok{background:var(--ok-bg);color:var(--ok);border-left:4px solid var(--ok)}
@@ -682,21 +699,97 @@ function addAtt() {
   attN++;
   const l = document.getElementById('att-list');
   const d = document.createElement('div'); d.className = 'att-card';
+  const uid = `att_${attN}_${Date.now()}`;
+  d.dataset.uid = uid;
   d.innerHTML = `<div class="att-card-num">RIGA ${attN}</div>
     <button class="att-del" onclick="this.closest('.att-card').remove()">×</button>
     <div class="att-grid">
       <div class="field" style="grid-column:1/-1"><span class="lbl">Tipologia attività</span><input type="text" placeholder="es. Posa cavi, Armatura, Scavi..."></div>
       <div class="field"><span class="lbl">Quantità</span><input type="text" placeholder="es. 120 m"></div>
       <div class="field"><span class="lbl">Ai Picc. N°</span><input type="text" placeholder="es. 42–45"></div>
+    </div>
+    <div class="foto-section">
+      <span class="foto-label">📷 Foto (max 3)</span>
+      <div class="foto-row">
+        ${[1,2,3].map(i => `
+        <div class="foto-slot" id="${uid}_f${i}">
+          <span class="foto-icon">+</span>
+          <input type="file" accept="image/*" capture="environment"
+            onchange="handleFoto(this,'${uid}_f${i}')" title="Scatta o carica foto">
+          <button class="foto-del" onclick="delFoto(event,'${uid}_f${i}')">×</button>
+        </div>`).join('')}
+      </div>
     </div>`;
   l.appendChild(d);
 }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-function openModal(id)  { document.getElementById(id).classList.add('open'); }
+/* ══════════════════════════════════════════════
+   GESTIONE FOTO
+══════════════════════════════════════════════ */
+const fotoStore = {}; // { slotId: { file, base64, name } }
+
+function handleFoto(input, slotId) {
+  const file = input.files[0];
+  if (!file) return;
+  const slot = document.getElementById(slotId);
+  const reader = new FileReader();
+  reader.onload = e => {
+    const b64 = e.target.result.split(',')[1];
+    const ext = file.name.split('.').pop() || 'jpg';
+    const name = `foto_${slotId}_${Date.now()}.${ext}`;
+    fotoStore[slotId] = { file, base64: b64, name, mimeType: file.type || 'image/jpeg' };
+    slot.classList.add('has-foto');
+    slot.querySelector('.foto-icon').style.display = 'none';
+    let img = slot.querySelector('img');
+    if (!img) { img = document.createElement('img'); slot.insertBefore(img, slot.querySelector('.foto-del')); }
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function delFoto(e, slotId) {
+  e.preventDefault(); e.stopPropagation();
+  const slot = document.getElementById(slotId);
+  delete fotoStore[slotId];
+  slot.classList.remove('has-foto');
+  slot.querySelector('.foto-icon').style.display = '';
+  const img = slot.querySelector('img');
+  if (img) img.remove();
+  slot.querySelector('input[type=file]').value = '';
+}
+
+function getFotoForCard(uid) {
+  return [1,2,3].map(i => fotoStore[`${uid}_f${i}`]).filter(Boolean);
+}
 
 /* ══════════════════════════════════════════════
-   PATH & UPDATE
+   VALIDAZIONE CAMPI OBBLIGATORI
 ══════════════════════════════════════════════ */
+function validateFields() {
+  const mancanti = [];
+  const v = id => document.getElementById(id)?.value?.trim();
+  if (!v('cantiere'))    mancanti.push('Cantiere');
+  if (!v('codice'))      mancanti.push('Codice cantiere');
+  if (!v('appaltatore')) mancanti.push('Appaltatore');
+  if (!v('preposto'))    mancanti.push('Preposto alla sicurezza');
+  if (!v('n_operai'))    mancanti.push('Numero operai');
+  // MDO
+  const mdo = Array.from(document.querySelectorAll('#mdo-list input')).map(i=>i.value.trim()).filter(Boolean);
+  if (!mdo.length) mancanti.push('Personale MI-MDO');
+  // Mezzi
+  if (!Object.keys(sel).length) mancanti.push('Mezzi utilizzati');
+  // Attività
+  const att = Array.from(document.querySelectorAll('#att-list .att-card input:first-of-type')).map(i=>i.value.trim()).filter(Boolean);
+  if (!att.length) mancanti.push('Almeno una attività svolta');
+  // Interruzione diurna
+  if (!document.getElementById('id_bin')?.value?.trim()) mancanti.push('Interruzione diurna - Binario');
+  if (!document.getElementById('id_usc')?.value?.trim()) mancanti.push('Interruzione diurna - Uscita');
+  if (!document.getElementById('id_rie')?.value?.trim()) mancanti.push('Interruzione diurna - Rientro');
+  if (!document.getElementById('id_fir')?.value?.trim()) mancanti.push('Interruzione diurna - Firma');
+  return mancanti;
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
 function getPathInfo() {
   const now   = new Date();
   const anno  = document.getElementById('anno').value || now.getFullYear();
@@ -758,8 +851,10 @@ function collectData() {
     targa: r.querySelector('[data-f=t]')?.value || '', modello: r.querySelector('[data-f=mod]')?.value || '',
   }));
   const att = Array.from(document.querySelectorAll('#att-list .att-card')).map((c, i) => {
-    const inp = c.querySelectorAll('input');
-    return { n: i+1, tipo: inp[0]?.value||'', qty: inp[1]?.value||'', picc: inp[2]?.value||'' };
+    const inp  = c.querySelectorAll('input[type=text], input[type=number]');
+    const uid  = c.dataset.uid || '';
+    const foto = getFotoForCard(uid);
+    return { n: i+1, tipo: inp[0]?.value||'', qty: inp[1]?.value||'', picc: inp[2]?.value||'', fotoNomi: foto.map(f=>f.name), uid };
   }).filter(r => r.tipo.trim());
   return {
     cantiere: document.getElementById('cantiere').value,
@@ -783,16 +878,26 @@ function collectData() {
    MODALE CONFERMA
 ══════════════════════════════════════════════ */
 function onSaveClick() {
-  const cantiere = document.getElementById('cantiere').value.trim();
-  const codice   = document.getElementById('codice').value.trim();
-  if (!cantiere || !codice) { showToast('⚠ Inserisci almeno cantiere e codice', 'warn'); return; }
   if (!getCfg().key) {
     showToast('⚠ Prima attiva Google Drive (⚙ in alto a destra)', 'warn');
     openCfgModal(); return;
   }
   const d = collectData();
   const p = getPathInfo();
-  // Costruisce riepilogo
+
+  // Validazione campi
+  const mancanti = validateFields();
+  let alertHtml = '';
+  if (mancanti.length) {
+    alertHtml = `<div class="alert-list">
+      <div class="alert-title">⚠ Campi non compilati (${mancanti.length})</div>
+      ${mancanti.map(m => `<div class="alert-item">${m}</div>`).join('')}
+    </div>`;
+  }
+
+  // Conta foto totali
+  const totFoto = Object.keys(fotoStore).length;
+
   const rows = [
     ['Cantiere',    d.cantiere    || '—'],
     ['Codice',      d.codice      || '—'],
@@ -802,10 +907,11 @@ function onSaveClick() {
     ['Operai',      d.n_operai    || '—'],
     ['Mezzi',       d.mezziSel.length ? d.mezziSel.map(m => m.nome + ' ×' + m.qty).join(', ') : '—'],
     ['Attività',    d.att.length ? d.att.length + ' righe inserite' : '—'],
+    ['Foto',        totFoto ? totFoto + ' foto allegate' : 'Nessuna foto'],
   ];
-  document.getElementById('recap-content').innerHTML = rows.map(([k,v]) =>
-    `<div class="recap-row"><span class="recap-key">${k}</span><span class="recap-val">${v}</span></div>`
-  ).join('');
+  document.getElementById('recap-content').innerHTML =
+    alertHtml +
+    rows.map(([k,v]) => `<div class="recap-row"><span class="recap-key">${k}</span><span class="recap-val">${v}</span></div>`).join('');
   document.getElementById('recap-path').innerHTML = `📁 ${d.path.root}/${d.anno}/${d.mese}/${d.giorno}/${d.codice}`;
   openModal('modal-confirm');
 }
@@ -954,8 +1060,18 @@ async function doSave() {
     showToast(step + '…', 'warn');
     await driveUploadFileB64(token, `Rapportino_${safeName}.xlsx`, xlsxB64, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', codId);
 
+    // Carica foto se presenti
+    const fotoList = Object.values(fotoStore);
+    if (fotoList.length) {
+      step = 'Caricamento foto';
+      showToast(`Caricamento ${fotoList.length} foto…`, 'warn');
+      for (const foto of fotoList) {
+        await driveUploadFileB64(token, foto.name, foto.base64, foto.mimeType, codId);
+      }
+    }
+
     setBtnLoading(false);
-    showToast('✓ Rapportino salvato su Google Drive!', 'ok');
+    showToast(`✓ Rapportino salvato${fotoList.length ? ' con ' + fotoList.length + ' foto' : ''}!`, 'ok');
 
   } catch (err) {
     setBtnLoading(false);
@@ -1037,11 +1153,11 @@ async function buildXLSX(d) {
     'Personale MDO', 'Personale MEPC',
     'Carrelli', 'Pianali', 'Carro botte', 'Autoscala', 'Auto', 'Camion', 'Furgoni',
     'Targhe e modelli',
-    'Att.1 Tipo', 'Att.1 Qtà', 'Att.1 Picc.',
-    'Att.2 Tipo', 'Att.2 Qtà', 'Att.2 Picc.',
-    'Att.3 Tipo', 'Att.3 Qtà', 'Att.3 Picc.',
-    'Att.4 Tipo', 'Att.4 Qtà', 'Att.4 Picc.',
-    'Att.5 Tipo', 'Att.5 Qtà', 'Att.5 Picc.',
+    'Att.1 Tipo', 'Att.1 Qtà', 'Att.1 Picc.', 'Att.1 Foto',
+    'Att.2 Tipo', 'Att.2 Qtà', 'Att.2 Picc.', 'Att.2 Foto',
+    'Att.3 Tipo', 'Att.3 Qtà', 'Att.3 Picc.', 'Att.3 Foto',
+    'Att.4 Tipo', 'Att.4 Qtà', 'Att.4 Picc.', 'Att.4 Foto',
+    'Att.5 Tipo', 'Att.5 Qtà', 'Att.5 Picc.', 'Att.5 Foto',
     'Int.D Binario', 'Int.D Uscita', 'Int.D Rientro', 'Int.D Firma',
     'Int.N Binario', 'Int.N Uscita', 'Int.N Rientro', 'Int.N Firma',
     'Note', 'Generato il'
@@ -1049,10 +1165,10 @@ async function buildXLSX(d) {
 
   const getMezzo = id => { const m = d.mezziSel.find(m=>m.id===id); return m ? String(m.qty) : ''; };
   const targheR  = d.targhe.map(t=>`${t.nome}: ${t.targa}${t.modello?' ('+t.modello+')':''}`).join(' | ');
-  const attCols  = [];
+  const attCols = [];
   for (let i = 0; i < 5; i++) {
     const a = d.att[i];
-    attCols.push(a?.tipo||'', a?.qty||'', a?.picc||'');
+    attCols.push(a?.tipo||'', a?.qty||'', a?.picc||'', a?.fotoNomi?.join(', ')||'');
   }
 
   const row = [
@@ -1135,6 +1251,7 @@ function resetForm() {
   if (!confirm('Resettare il modulo per un nuovo rapportino?')) return;
   document.querySelectorAll('input[type=text], input[type=time]').forEach(i => i.value = '');
   document.getElementById('note').value = '';
+  Object.keys(fotoStore).forEach(k => delete fotoStore[k]);
   document.getElementById('att-list').innerHTML = ''; attN = 0;
   for (let i = 0; i < 5; i++) addAtt();
   Object.keys(sel).forEach(k => delete sel[k]);
